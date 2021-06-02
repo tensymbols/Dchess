@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DniweChess", "DniweChess\DniweChess.vcxproj", "{EE8A3F2A-B20C-48C6-851B-1C4BA0251BB6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DChess", "DChess\Dchess.vcxproj", "{EE8A3F2A-B20C-48C6-851B-1C4BA0251BB6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DChessLogic", "DChessLogic\DChessLogic.vcxproj", "{A1AF8914-065E-4E54-AD76-6E4BE3022F58}"
 EndProject

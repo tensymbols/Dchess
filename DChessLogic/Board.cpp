@@ -139,10 +139,14 @@ void Board::Move(const char* coord) {
 		int pos1_ = GetNumberPos(pos1);
 		int pos2_ = GetNumberPos(pos2);
 		std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
-		if (!BoardState[pos1_] || pos1_==pos2_) throw std::string("Illegal move");
-		BoardState[pos1_]->Move(pos2_);
-		BoardState[pos2_] = BoardState[pos1_];
-		BoardState[pos1_] = NULL;
+		if (!BoardState[pos1_] || pos1_ == pos2_) {
+			std::cout << ("Illegal move\n"); 
+		}
+		else {
+			BoardState[pos1_]->Move(pos2_);
+			BoardState[pos2_] = BoardState[pos1_];
+			BoardState[pos1_] = NULL;
+		}
 	}
 	catch (...) {
 		throw ;

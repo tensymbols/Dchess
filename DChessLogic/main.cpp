@@ -24,7 +24,6 @@ int main() {
 			std::cout << s <<"\n";
 			_getch();
 		}
- 	//	getchar();
 		
 	}
 
