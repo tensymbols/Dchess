@@ -7,9 +7,10 @@ public:
 
 	
 	//Piece* GetBrdState(const int);
+	Board(const char*, SDL_Renderer*, Pos, SDL_Color wf, SDL_Color bf, int w, int h );
 	Board(const char*, SDL_Renderer*, Pos, SDL_Color wf, SDL_Color bf);
 	void Init(const char* fen);
-	void Draw() ;
+	void Draw() override;
 	void Show();
 	void Move(const char*);
 	static int GetNumberPos(const char*);
@@ -22,7 +23,7 @@ private:
 	const int dim = 64;
 	SDL_Color bfield;
 	SDL_Color wfield;
-	std::vector<Piece*> pieces_; // contains ehm... uwu...  ><
+	std::vector<Piece*> pieces_; // contains ehm... uwu...  >w<
 	Piece* BoardState[64]; // contains "references" to pieces, refers to NULL when cell is not occupied*/
 	SDL_Rect squares[64];
 };

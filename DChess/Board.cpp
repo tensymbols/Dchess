@@ -1,11 +1,10 @@
 #include "Board.h"
 #include <iostream>
+#include <string>
 
 
 
-
-
-Board::Board(const char* texfile, SDL_Renderer*rnd, Pos pos_, SDL_Color wf, SDL_Color bf) : gameObject(texfile,rnd,pos_), bfield(bf), wfield(wf)
+Board::Board(const char* texfile, SDL_Renderer*rnd, Pos pos_, SDL_Color wf, SDL_Color bf, int w=0, int h=0) : gameObject(texfile,rnd,pos_,w, h), bfield(bf), wfield(wf)
 {
 	for (size_t i = 0; i < dim * dim; i++)
 		BoardState[i] = NULL;
@@ -25,6 +24,27 @@ Board::Board(const char* texfile, SDL_Renderer*rnd, Pos pos_, SDL_Color wf, SDL_
 		}
 	}
 }
+Board::Board(const char* texfile, SDL_Renderer* rnd, Pos pos_, SDL_Color wf, SDL_Color bf) : gameObject(texfile, rnd, pos_), bfield(bf), wfield(wf)
+{
+	for (size_t i = 0; i < dim * dim; i++)
+ 	BoardState[i] = NULL;
+	fullClock = 0;
+	semiClock = 0;
+	sideToMove = 1;
+	for (size_t i = 0; i < 8; i++)
+	{
+		for (size_t j = 0; j < 8; j++)
+		{
+			int index = j + i * 8;
+			squares[index].w = dim,
+			squares[index].h = dim;
+			squares[index].x = this->getPos().x + j * dim;
+			squares[index].y = this->getPos().y + i * dim;
+			//			std::cout << index << " " << squares[index].w << " " << squares[index].h << " " << squares[index].x << " " << squares[index].y<< "\n";
+		}
+	}
+}
+
 
 void Board::Init(const char* fen)
 {
@@ -49,7 +69,15 @@ void Board::Init(const char* fen)
 
 			ttype = getTypeFromLetter(fen[k]);
 			tcolor = (ttype < 6);
-			pieces_.push_back(new Piece(ttype, tcolor, pos, NULL, this->getRnd(), {0,0}));
+		
+			std::string sNum = std::to_string(ttype+1);
+			 char tempTexName[] = { "textures\\pieces0_" };
+			strcat(tempTexName, sNum.c_str());
+			strcat(tempTexName, ".png");
+
+			std::string S = tempTexName;
+			std::cout << S;
+			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName, this->getRnd(), {0,0},dim,dim));
 			BoardState[pos] = pieces_[pieces_.size() - 1];
 			pos++;
 		}
@@ -166,7 +194,7 @@ void Board::Move(const char* coord) {
 }
 
 void Board::Draw() {
-//	SDL_RenderCopy(renderer, piecesTex, &pieceRekts[i], &dstRekt);
+
 	for (size_t i = 0; i < 8; i++)
 	{
 		for (size_t j = 0; j < 8; j++)
@@ -187,6 +215,12 @@ void Board::Draw() {
 			SDL_RenderDrawRect(this->getRnd(), &squares[index]);
 		}
 	}
+	for (size_t i = 0; i < pieces_.size(); i++)
+	{
+		pieces_[i]->Draw();
+	//	SDL_RenderPresent(this->getRnd());
+	}
+
 }
 
 void Board::Show() {

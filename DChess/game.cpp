@@ -5,6 +5,8 @@
 #include <iostream>
 
 Board* brd;
+
+
 game::game() :isRunning(false)
 {}
 
@@ -27,7 +29,8 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 
 		}
 		brd = new Board("textures/pieces0.png", renderer, { 0,0 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 });
-
+		const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
+		brd->Init(fen);
 		isRunning = true;
 		
 	}

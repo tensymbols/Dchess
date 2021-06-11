@@ -5,12 +5,13 @@
 class Piece :public gameObject {
 public:
 	Piece(int, bool, int, const char*, SDL_Renderer*, Pos);
+	Piece(int type, bool color, int pos, const char* texname, SDL_Renderer* rnd, Pos pos_, int w, int h);
 	~Piece();
 	
 	// 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn
 	void Move(const int);
 	void InitPiece(int, bool, int);
-	void Draw() override;
+//	void Draw() override;
 	int GetPos() { return pos; }
 	bool GetColor() { return color; }
 	int GetType() { return type; }
