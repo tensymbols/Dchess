@@ -1,15 +1,16 @@
 #include <iostream>
 #include "game.h"
+
 int main(int argc, char* argv[]) {
 
 	
 	game Game;
 
 	Uint32 timefromstart;
-	const int fps = 120;
+	const int fps = 60;
 	int msPerFrame = 1000 / fps;
 
-	Game.init("Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800,600,0);
+	Game.init("Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 720,720,0);
 	
 	while (Game.running()) {
 		timefromstart = SDL_GetTicks();
@@ -23,7 +24,7 @@ int main(int argc, char* argv[]) {
 
 		timePerFrame = temp - timefromstart;
 
-		std::cout << timePerFrame << std::endl;
+	//	std::cout << timePerFrame << std::endl;
 		if (timePerFrame < msPerFrame) {
 			SDL_Delay(msPerFrame - timePerFrame);
 		}

@@ -1,7 +1,10 @@
 #include "game.h"
+
+#include "Board.h"
 #include "texmng.h"
 #include <iostream>
-#include "Board.h"
+
+Board* brd;
 game::game() :isRunning(false)
 {}
 
@@ -13,8 +16,6 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 
 	int flags = 0;
 
-
-
 	if (fullscreen) { flags = SDL_WINDOW_FULLSCREEN; }
 	if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
 		std::cout << "INITIALIZED succesfully" << std::endl;
@@ -25,14 +26,7 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 			
 
 		}
-
-		piecesTex = texLoader::loadTexture( "textures/pieces0.png",renderer);
-	
-
-	
-		pieceInit();
-
-
+		brd = new Board("textures/pieces0.png", renderer, { 0,0 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 });
 
 		isRunning = true;
 		
@@ -57,21 +51,21 @@ void game::handleEvents()
 void game::update()
 {
 	cnt++;
-	piecePosRekts[0].x++;
+
 }
 
 void game::render()
 {
 	SDL_RenderClear(renderer);
 	
-	for (size_t i = 0; i < 12; i++)
+	/*for (size_t i = 0; i < 12; i++)
 	{
 		SDL_RenderCopy(renderer, piecesTex, &pieceTexRekts[i], &piecePosRekts[i]);
-	}
+	}*/
 
 	//SDL_RenderCopy(renderer, piecesTex, &pieceRekts[i], &dstRekt);
-	
-
+	brd->Draw();
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderPresent(renderer);
 	
 
@@ -92,22 +86,4 @@ bool game::running()
 	return isRunning;
 }
 
-void game::pieceInit() {
 
-	//texture init
-	for (size_t i = 0; i < 12; i++)
-	{
-		pieceTexRekts[i].w = 64;
-		pieceTexRekts[i].h = 64;
-		pieceTexRekts[i].x = 64 * (i % 6);
-		pieceTexRekts[i].y = 64 * (i / 6);
-	}
-	//position init
-	for (size_t i = 0; i < 12; i++)
-	{
-		piecePosRekts[i].w = 64;
-		piecePosRekts[i].h = 64;
-		piecePosRekts[i].x = 64 * (i % 6);
-		piecePosRekts[i].y = 64 * (i / 6);
-	}
-}

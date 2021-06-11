@@ -2,6 +2,10 @@
 #include "SDL.h"
 #include "SDL_image.h"
 
+#include "texmng.h"
+#include "gameObject.h"
+//#include "Board.h"
+
 
 class game {
 
@@ -18,19 +22,10 @@ public:
 
 	bool running();
 private:
-
-	void pieceInit();
 	bool isRunning;
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 
-	
-
-	SDL_Texture* piecesTex;
-
-	SDL_Rect dstRekt;
-	SDL_Rect pieceTexRekts[12];
-	SDL_Rect piecePosRekts[12];
 
 	int cnt = 0;
 
