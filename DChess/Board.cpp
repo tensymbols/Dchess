@@ -76,7 +76,7 @@ void Board::Init(const char* fen)
 			strcat(tempTexName, ".png");
 
 			std::string S = tempTexName;
-			std::cout << S;
+			
 			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName, this->getRnd(), {0,0},dim,dim));
 			BoardState[pos] = pieces_[pieces_.size() - 1];
 			pos++;
@@ -160,10 +160,19 @@ const char* Board::GetPosFromNumber(const int pos)
 	char pos_[2];
 	int num = pos / 8 + 1;
 	char letter = 64 - (pos / 8) + 97;
-	return nullptr;
+
 	pos_[0] = letter;
 	pos_[1] = num + 48;
 	return pos_;
+}
+Pos Board::GetCoordFromNumber(const int pos)
+{
+
+	int y = pos / 8;
+	int x = pos-y*8;
+
+	Pos temp = {x,y };
+	return temp;
 }
 
 
@@ -176,7 +185,7 @@ void Board::Move(const char* coord) {
 	try {
 		int pos1_ = GetNumberPos(pos1);
 		int pos2_ = GetNumberPos(pos2);
-		std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
+	//	std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
 		if (!BoardState[pos1_] || pos1_ == pos2_) {
 			std::cout << ("Illegal move\n");
 		}
@@ -203,22 +212,27 @@ void Board::Draw() {
 			if ((i + j) % 2)
 			{
 				SDL_SetRenderDrawColor(this->getRnd(), bfield.r, bfield.g, bfield.b, 255);
-				std::cout << "blek ";
+				//std::cout << "blek ";
 			}
 			else
 			{
 				SDL_SetRenderDrawColor(this->getRnd(), wfield.r, wfield.g, wfield.b, 255);
-				std::cout << "whit ";
+				//std::cout << "whit ";
 			}
-			std::cout << index << " " << squares[index].w << " " << squares[index].h << " " << squares[index].x << " " << squares[index].y << "\n";
+			//std::cout << index << " " << squares[index].w << " " << squares[index].h << " " << squares[index].x << " " << squares[index].y << "\n";
 			SDL_RenderFillRect(this->getRnd(), &squares[index]);
 			SDL_RenderDrawRect(this->getRnd(), &squares[index]);
 		}
 	}
-	for (size_t i = 0; i < pieces_.size(); i++)
+	for (size_t i = 0; i < 64; i++)
 	{
-		pieces_[i]->Draw();
-	//	SDL_RenderPresent(this->getRnd());
+	//	std::cout << pieces_[i]->GetPos()<< " ";
+		if (BoardState[i]!=NULL) {
+			Pos position = GetCoordFromNumber(BoardState[i]->GetPos());
+
+			BoardState[i]->Draw({ position.x * dim,position.y * dim });
+		}
+
 	}
 
 }

@@ -53,8 +53,17 @@ void game::handleEvents()
 
 void game::update()
 {
+	std::string pos;
 	cnt++;
-
+	try{
+		std::cin >> pos;
+		const char* p = pos.c_str();
+		brd->Move(p);
+	}
+	catch (std::string s) {
+		std::cout << s << "\n";
+		getchar();
+	}
 }
 
 void game::render()

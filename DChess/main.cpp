@@ -17,9 +17,10 @@ int main(int argc, char* argv[]) {
 		timefromstart = SDL_GetTicks();
 		Uint32 temp;
 		int timePerFrame;
+		Game.render();
 		Game.handleEvents();
 		Game.update();
-		Game.render();
+		
 
 		temp = SDL_GetTicks();
 

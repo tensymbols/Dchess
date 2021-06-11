@@ -1,9 +1,12 @@
 #include "piece.h"
 
-Piece::Piece(int type, bool color, int pos, const char* texname, SDL_Renderer*rnd, Pos pos_) : gameObject(texname,rnd,pos_)
+Piece::Piece(int type, bool color, int pos, const char* texname, SDL_Renderer*rnd, Pos pos_) :
+	gameObject(texname,rnd,pos_), type(type), pos(pos), color(color)
 {
 }
-Piece::Piece(int type, bool color, int pos, const char* texname, SDL_Renderer* rnd, Pos pos_, int w, int h) : gameObject(texname, rnd, pos_, w,h)
+Piece::Piece(int type, bool color, int pos, const char* texname, SDL_Renderer* rnd, Pos pos_, int w, int h) : 
+	gameObject(texname, rnd, pos_, w,h), 
+	type(type), pos(pos), color(color)
 {
 }
 

@@ -9,6 +9,7 @@ public:
 	gameObject(const char*, SDL_Renderer*, Pos);
 	virtual void update();
 	virtual void Draw();
+	virtual void Draw(Pos pos);
 	SDL_Renderer* getRnd() { return rnd; }
 	Pos getPos() { return pos_; }
 private:

@@ -15,6 +15,7 @@ public:
 	void Move(const char*);
 	static int GetNumberPos(const char*);
 	static const char* GetPosFromNumber(const int);
+	static Pos GetCoordFromNumber(const int pos);
 	static int getTypeFromLetter(const char c);
 private:
 	bool sideToMove;// 0 - black, 1 - white
