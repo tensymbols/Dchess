@@ -6,7 +6,7 @@
 
 Board::Board(const char* texfile, SDL_Renderer*rnd, Pos pos_, SDL_Color wf, SDL_Color bf, int w=0, int h=0) : gameObject(texfile,rnd,pos_,w, h), bfield(bf), wfield(wf)
 {
-	for (size_t i = 0; i < dim * dim; i++)
+	for (size_t i = 0; i < 64; i++)
 		BoardState[i] = NULL;
 	fullClock = 0;
 	semiClock = 0;
@@ -26,7 +26,7 @@ Board::Board(const char* texfile, SDL_Renderer*rnd, Pos pos_, SDL_Color wf, SDL_
 }
 Board::Board(const char* texfile, SDL_Renderer* rnd, Pos pos_, SDL_Color wf, SDL_Color bf) : gameObject(texfile, rnd, pos_), bfield(bf), wfield(wf)
 {
-	for (size_t i = 0; i < dim * dim; i++)
+	for (size_t i = 0; i < 64; i++)
  	BoardState[i] = NULL;
 	fullClock = 0;
 	semiClock = 0;
@@ -71,13 +71,11 @@ void Board::Init(const char* fen)
 			tcolor = (ttype < 6);
 		
 			std::string sNum = std::to_string(ttype+1);
-			 char tempTexName[] = { "textures\\pieces0_" };
-			strcat(tempTexName, sNum.c_str());
-			strcat(tempTexName, ".png");
-
-			std::string S = tempTexName;
+			std::string tempTexName ="textures\\pieces0_" ;
+			tempTexName += sNum;
+			tempTexName += ".png";
 			
-			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName, this->getRnd(), {0,0},dim,dim));
+			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName.c_str(), this->getRnd(), {0,0},dim,dim));
 			BoardState[pos] = pieces_[pieces_.size() - 1];
 			pos++;
 		}
