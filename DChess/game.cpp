@@ -4,6 +4,7 @@
 #include "texmng.h"
 #include <iostream>
 
+SDL_Renderer* gameObject::rnd = nullptr;
 Board* brd;
 
 
@@ -20,7 +21,7 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 
 	if (fullscreen) { flags = SDL_WINDOW_FULLSCREEN; }
 	if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
-		std::cout << "INITIALIZED succesfully" << std::endl;
+	//	std::cout << "INITIALIZED succesfully" << std::endl;
 		window = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
 
 		renderer = SDL_CreateRenderer(window, -1, 0);
@@ -28,7 +29,9 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 			
 
 		}
-		brd = new Board("textures/pieces0.png", renderer, { 0,0 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 });
+		gameObject::rnd = renderer;
+
+		brd = new Board("textures/pieces0.png", {64,64 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 }, 64);
 		const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
 		brd->Init(fen);
 		isRunning = true;
@@ -46,6 +49,19 @@ void game::handleEvents()
 		case SDL_QUIT:
 			isRunning = 0;
 			break;
+		case SDL_MOUSEMOTION:
+			brd->handleEvent(event);
+		//	else brd->unmark(brd->getPosFromMouse(mpos));
+			
+		//	std::cout << event.motion.x << " " << event.motion.y << "\n";
+		
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			brd->handleEvent(event);
+			break;
+		case SDL_MOUSEBUTTONUP:
+			brd->handleEvent(event);
+			break;
 		default:
 			break;
 	}
@@ -53,7 +69,7 @@ void game::handleEvents()
 
 void game::update()
 {
-	std::string pos;
+	/*std::string pos;
 	cnt++;
 	try{
 		std::cin >> pos;
@@ -63,7 +79,8 @@ void game::update()
 	catch (std::string s) {
 		std::cout << s << "\n";
 		getchar();
-	}
+	}*/
+	
 }
 
 void game::render()
@@ -90,7 +107,7 @@ void game::clean()
 
 
 	SDL_Quit();
-	std::cout << "CLEANED" << std::endl;
+//	std::cout << "CLEANED" << std::endl;
 }
 
 bool game::running()

@@ -4,8 +4,8 @@
 
 class Piece :public gameObject {
 public:
-	Piece(int, bool, int, const char*, SDL_Renderer*, Pos);
-	Piece(int type, bool color, int pos, const char* texname, SDL_Renderer* rnd, Pos pos_, int w, int h);
+	Piece(int, bool, int, const char*,  Pos);
+	Piece(int type, bool color, int pos, const char* texname, Pos pos_, int w, int h);
 	~Piece();
 	
 	// 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn
@@ -19,6 +19,7 @@ public:
 private:
 	int type;
 	int pos;
+	
 	bool color;
 };
 
