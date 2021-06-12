@@ -18,6 +18,7 @@ public:
 	void mark(const int);
 	void unmark(const int);
 	void handleEvent(SDL_Event&);
+	Pos getRelPosition(int pos);
 	static int GetNumberPos(const char*);
 	static const char* GetPosFromNumber(const int);
 	static Pos GetCoordFromNumber(const int pos);

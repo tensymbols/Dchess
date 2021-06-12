@@ -90,10 +90,8 @@ void Board::Init(const char* fen)
 			tempTexName += sNum;
 			tempTexName += ".png";
 
-			Pos position = GetCoordFromNumber(pos);
-			Pos relPosition = { position.x * dim + this->getPos().x, position.y * dim + this->getPos().y };
 		//	std::cout << relPosition.x << " " << relPosition.y << "\n";
-			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName.c_str(),relPosition,dim,dim));
+			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName.c_str(),getRelPosition(pos),dim,dim));
 
 			BoardState[pos] = pieces_[pieces_.size() - 1];
 			
@@ -216,11 +214,12 @@ void Board::handleEvent(SDL_Event &e)
 		Pos mpos;
 		mpos.x = e.motion.x;
 		mpos.y = e.motion.y;
-		if (holdPiece != NULL) {
-			holdPiece->setPos(mpos);
-		}
 		
 		if (isInside(mpos)) {
+			if (holdPiece != NULL) {
+				holdPiece->setPos({mpos.x-dim/2,mpos.y-dim/2});
+			}
+
 			unmark(prevMarked);
 			int pos_ = getPosFromMouse(mpos);
 		//	std::cout <<  pos_<<"\n";
@@ -242,7 +241,7 @@ void Board::handleEvent(SDL_Event &e)
 				int pos_ = getPosFromMouse(mpos);
 				if (BoardState[pos_] != NULL) {
 					holdPiece = BoardState[pos_];
-					std::cout <<  BoardState[pos_]->GetPos()<< " ";
+				//	std::cout <<  BoardState[pos_]->GetPos()<< " ";
 				}
 			}
 
@@ -260,10 +259,10 @@ void Board::handleEvent(SDL_Event &e)
 
 			if (isInside(mpos)) {
 				int pos_ = getPosFromMouse(mpos);
-				if (BoardState[pos_] != NULL && holdPiece!=NULL) {
+				if (holdPiece!=NULL) {
 				
 					Move(holdPiece->GetPos(), pos_);
-					std::cout << BoardState[pos_]->GetPos() << " ";
+			
 				}
 			}
 			if (holdPiece != NULL) holdPiece = NULL;
@@ -273,6 +272,13 @@ void Board::handleEvent(SDL_Event &e)
 
 		}		break;
 	}
+}
+
+Pos Board::getRelPosition(int pos)
+{
+	Pos position = GetCoordFromNumber(pos);
+	Pos relPosition = { position.x * dim + this->getPos().x, position.y * dim + this->getPos().y };
+	return relPosition;
 }
 
 
@@ -306,20 +312,21 @@ void Board::Move(int pos1, int pos2)
 {
 
 	try {
-
-		//	std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
-		if (!BoardState[pos1] || pos1 == pos2) {
-			std::cout << ("Illegal move\n");
+		if (pos1 == pos2) {
+			BoardState[pos1]->setPos(getRelPosition(pos2));
 		}
 		else {
-			BoardState[pos1]->Move(pos2);
-			BoardState[pos2] = BoardState[pos1];
-		
-			Pos temp2 = BoardState[pos2]->getPos();
-			Pos temp1 = BoardState[pos1]->getPos();
-		//	std::cout << temp1.x << " " << temp1.y << " |" << temp2.x << " " << temp2.x << " ";
-			BoardState[pos1]->setPos(temp2);
-			BoardState[pos1] = NULL;
+			//	std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
+			if (!BoardState[pos1]) {
+				std::cout << ("Illegal move\n");
+			}
+			else {
+				BoardState[pos1]->Move(pos2);
+				BoardState[pos2] = BoardState[pos1];
+
+				BoardState[pos1]->setPos(getRelPosition(pos2));
+				BoardState[pos1] = NULL;
+			}
 		}
 	}
 	catch (...) {
@@ -395,7 +402,6 @@ void Board::Show() {
 				std::cout << "white ";
 				break;
 			}
-
 			std::cout << tpos << " ";
 		}
 		else std::cout << "mt";
