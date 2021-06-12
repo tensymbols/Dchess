@@ -17,6 +17,7 @@ public:
 	void Move(int pos1, int pos2);
 	void mark(const int);
 	void unmark(const int);
+	void keepInsde(Pos&);
 	void handleEvent(SDL_Event&);
 	Pos getRelPosition(int pos);
 	static int GetNumberPos(const char*);

@@ -151,6 +151,7 @@ void Board::changeColor(SDL_Color w, SDL_Color b)
 	bfield = b;
 }
 
+
 int Board::getPosFromMouse(Pos pos)
 {
 	Pos brdPos = this->getPos();
@@ -206,6 +207,19 @@ Pos Board::GetCoordFromNumber(const int pos)
 	return temp;
 }
 
+void Board::keepInsde(Pos &pos)
+{
+	Pos brdpos = this->getPos();
+	int x_right = brdpos.x + dim * 8;
+	int y_down = brdpos.y + dim * 8;
+	int x_left = brdpos.x;
+	int y_up = brdpos.y;
+	if (pos.x > x_right) pos.x = x_right;
+	if (pos.x < x_left) pos.x = x_left;
+	if (pos.y > y_down) pos.y = y_down;
+	if (pos.y < y_up) pos.y = y_up;
+}
+
 void Board::handleEvent(SDL_Event &e)
 {
 	switch (e.type) {
@@ -217,6 +231,7 @@ void Board::handleEvent(SDL_Event &e)
 		
 		if (isInside(mpos)) {
 			if (holdPiece != NULL) {
+
 				holdPiece->setPos({mpos.x-dim/2,mpos.y-dim/2});
 			}
 
@@ -227,6 +242,12 @@ void Board::handleEvent(SDL_Event &e)
 			if (!marked[pos_]) mark(pos_);
 		}
 		else {
+		//	if (holdPiece != NULL) holdPiece = NULL;
+		//	else
+			if (holdPiece != NULL) {
+				keepInsde(mpos);
+				holdPiece->setPos({ mpos.x - dim / 2,mpos.y - dim / 2 });
+			}
 			unmark(prevMarked);
 		}
 		break;
@@ -265,7 +286,15 @@ void Board::handleEvent(SDL_Event &e)
 			
 				}
 			}
-			if (holdPiece != NULL) holdPiece = NULL;
+			else {
+				if (holdPiece != NULL) {
+					Move(holdPiece->GetPos(), holdPiece->GetPos());
+		
+				}
+					
+			}
+			holdPiece = NULL;
+			
 
 		}
 		else if (e.button.button == SDL_BUTTON_RIGHT) {
