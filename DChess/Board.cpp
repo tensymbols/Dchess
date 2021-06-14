@@ -351,6 +351,8 @@ void Board::Move(int pos1, int pos2)
 			}
 			else {
 				BoardState[pos1]->Move(pos2);
+				//delete BoardState[pos2];
+
 				BoardState[pos2] = BoardState[pos1];
 
 				BoardState[pos1]->setPos(getRelPosition(pos2));
@@ -395,15 +397,13 @@ void Board::Draw() {
 			SDL_RenderDrawRect(gameObject::rnd, &squares[index]);
 		}
 	}
+	
+	
 	for (size_t i = 0; i < 64; i++)
 	{
-	//	std::cout << pieces_[i]->GetPos()<< " ";
-		if (BoardState[i]!=NULL) {
-			BoardState[i]->Draw();
-				//BoardState[i]->Draw({ position.x * dim+this->getPos().x,position.y * dim+this->getPos().y });
-		}
-
+		if(BoardState[i]!=NULL && BoardState[i]!=holdPiece) BoardState[i]->Draw();
 	}
+	if (holdPiece != NULL)holdPiece->Draw();
 
 }
 

@@ -11,7 +11,7 @@ Piece::Piece(int type, bool color, int pos, const char* texname, Pos pos_, int w
 }
 
 Piece::~Piece() {
-	delete this;
+	//delete this;
 }
 
 /*void Piece::Draw() {
