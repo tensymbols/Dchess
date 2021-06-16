@@ -25,6 +25,7 @@ void Piece::InitPiece(int type, bool color, int pos)
 	this->color = color;
 	this->pos = pos;
 }
+
 void Piece::Move(const int pos) {
 	this->pos = pos;
 

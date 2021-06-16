@@ -15,6 +15,7 @@ public:
 	int GetPos() { return pos; }
 	bool GetColor() { return color; }
 	int GetType() { return type; }
+	bool moveLegal(int pos);
 
 private:
 	int type;

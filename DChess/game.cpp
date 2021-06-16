@@ -5,6 +5,9 @@
 #include <iostream>
 
 SDL_Renderer* gameObject::rnd = nullptr;
+SDL_Renderer* graphics::renderer = nullptr;
+graphics* gameObject::gfx = nullptr;
+graphics* gfx;
 Board* brd;
 
 
@@ -29,10 +32,14 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 			
 
 		}
+		
 		gameObject::rnd = renderer;
+		graphics::renderer = renderer;
+		gameObject::gfx = gfx;
 
 		brd = new Board("textures/pieces0.png", {128,128 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 }, 64);
-		const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
+		//const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
+		const char fen[] = { "8/8/8/8/Rr " };
 		brd->Init(fen);
 		isRunning = true;
 		
