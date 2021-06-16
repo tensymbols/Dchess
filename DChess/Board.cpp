@@ -237,11 +237,11 @@ void Board::handleEvent(SDL_Event &e)
 				holdPiece->setPos({mpos.x-sqr_dim/2,mpos.y-sqr_dim/2}); // if there is a held piece it will drag it with mouse cursor
 			}
 
-			unmark(prevMarked);
+			//unmark(prevMarked);
 			int pos_ = getPosFromMouse(mpos);
 
 			prevMarked = pos_;
-			if (!marked[pos_]) mark(pos_);
+			//if (!marked[pos_]) mark(pos_);
 		}
 		else {
 
@@ -252,22 +252,29 @@ void Board::handleEvent(SDL_Event &e)
 			unmark(prevMarked);
 		}
 		break;
-	case SDL_MOUSEBUTTONDOWN: // when mouse button is pressed
+	case SDL_MOUSEBUTTONDOWN:
+		// when mouse button is pressed
 		if (e.button.button == SDL_BUTTON_LEFT) { 
-			int x, y;
-			SDL_GetMouseState(&x, &y);
-			Pos mpos; mpos.x = x; mpos.y = y;
-		
-			if (isInside(mpos)) {
-				int pos_ = getPosFromMouse(mpos);
-				for (size_t i = 0; i < temp_moves.size(); i++)
-				{
-					unmark(temp_moves[i]);
-				}
-				if (BoardState[pos_] != NULL) {
-					holdPiece = BoardState[pos_]; // if mouse position is inside board and square where mouse is at is not empty holdpiece is initialized
-					temp_moves = allLegal(holdPiece, pos_);
-					
+			
+			if (LMB_STATE == 0) {
+				
+				LMB_STATE = true;
+			//	std::cout << LMB_STATE << "\n";
+				int x, y;
+				SDL_GetMouseState(&x, &y);
+				Pos mpos; mpos.x = x; mpos.y = y;
+
+				if (isInside(mpos)) {
+					int pos_ = getPosFromMouse(mpos);
+					unmarkLegal();
+					if (BoardState[pos_] != NULL) {
+						holdPiece = BoardState[pos_]; // if mouse position is inside board and square where mouse is at is not empty holdpiece is initialized
+						temp_moves = allLegal(holdPiece, pos_);
+						drawLegal();
+						
+
+
+					}
 				}
 			}
 
@@ -278,33 +285,37 @@ void Board::handleEvent(SDL_Event &e)
 		break;
 	case SDL_MOUSEBUTTONUP: // when mouse button is released
 		if (e.button.button == SDL_BUTTON_LEFT) {
-			int x, y;
+			if (LMB_STATE==1) {
+				LMB_STATE = 0;
+				int x, y;
 
-			SDL_GetMouseState(&x, &y);
-			Pos mpos; mpos.x = x; mpos.y = y;
+			//	std::cout << LMB_STATE << "\n";
+				SDL_GetMouseState(&x, &y);
+				Pos mpos; mpos.x = x; mpos.y = y;
 
 
-			if (holdPiece != NULL) {
-				if (isInside(mpos)) {  // if mouse is inside board
-					int pos_ = getPosFromMouse(mpos);
+				if (holdPiece != NULL) {
+					if (isInside(mpos)) {  // if mouse is inside board
+						int pos_ = getPosFromMouse(mpos);
 
-					
-					if (isLegal(holdPiece, pos_)) { // if move is legal
-						Move(holdPiece->GetPos(), pos_); // move piece to specified position
-						sideToMove = !sideToMove;
+
+						if (isLegal(holdPiece, pos_)) { // if move is legal
+							Move(holdPiece->GetPos(), pos_); // move piece to specified position
+							sideToMove = !sideToMove;
+							unmarkLegal();
+						}
+						else {
+							Move(holdPiece->GetPos(), holdPiece->GetPos()); // if not legal then move piece back
+
+						}
 					}
 					else {
-						Move(holdPiece->GetPos(), holdPiece->GetPos()); // if not legal then move piece back
-						drawLegal();
+						Move(holdPiece->GetPos(), holdPiece->GetPos()); // if mouse is outside the board bring held piece back
+
 					}
 				}
-				else {
-					Move(holdPiece->GetPos(), holdPiece->GetPos()); // if mouse is outside the board bring held piece back
-
-				}
+				holdPiece = NULL;
 			}
-			holdPiece = NULL;	
-			
 
 		}
 		else if (e.button.button == SDL_BUTTON_RIGHT) {
@@ -314,19 +325,8 @@ void Board::handleEvent(SDL_Event &e)
 }
 bool Board::isLegal( Piece* p, int pos) {
 
-	if (p->GetColor() != sideToMove) {
-		std::cout << "This is not your turn now\n";
-		return false;
-
-	}
 	if (temp_moves.size() == 0) {
 		std::cout << "No legal moves available\n";
-		return false;
-
-	}
-	if (BoardState[pos] != NULL && BoardState[pos]->GetColor() == p->GetColor())
-	{
-		std::cout << "Cant eat your own pieces\n";
 		return false;
 
 	}
@@ -369,14 +369,25 @@ std::vector<int> Board::allLegal( Piece* p,int pos)
 	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
 //BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
 	std::vector<int> moves;
+	if (p->GetColor() != sideToMove) {
+		std::cout << "This is not your turn now\n";
+		return moves;
 
+	}
+
+	/*if (BoardState[pos] != NULL && BoardState[pos]->GetColor() == p->GetColor())
+	{
+		std::cout << "Cant eat your own pieces\n";
+		return moves;
+
+	}*/
 	int ttype = p->GetType();
 	ttype %= 6;
 	int currPos = p->GetPos();
-
+	std::vector<int> legal_temp;
 	switch (ttype) {
 	case 0: {
-		  std::vector<int> legal_temp;
+		  
 		  legal_temp = legal({ 1, 0 }, currPos);
 		  moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
 		  legal_temp = legal({ -1,0 }, currPos);
@@ -393,13 +404,36 @@ std::vector<int> Board::allLegal( Piece* p,int pos)
 	}
 		  break;
 	case 2:
-	
+		legal_temp = legal({ 1, 0 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ -1,0 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ 0,1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ 0,-1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+
+		legal_temp = legal({ -1, -1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ 1,-1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ -1,1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ 1,1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
 		break;
 	case 3:
 		
 		break;
 	case 4:
-		
+		legal_temp = legal({ -1, -1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ 1,-1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ -1,1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal_temp = legal({ 1,1 }, currPos);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
 		break;
 	case 5:
 		
@@ -483,6 +517,7 @@ void Board::mark(const int index)
 }
 void Board::unmark(const int index)
 {
+
 	Pos temp=getCoordFromNumber(index);
 	if ((temp.x + temp.y) % 2)
 		colSquares[index] = wfield;
@@ -505,8 +540,8 @@ void Board::Draw() {
 		}
 	}
 	
-	size_t i_max = brd_dim * brd_dim;
-	for (size_t i = 0; i < i_max; i++)
+	int i_max = brd_dim * brd_dim;
+	for (int i = 0; i < i_max; i++)
 	{
 		if(BoardState[i]!=NULL && BoardState[i]!=holdPiece) BoardState[i]->Draw();
 	}
@@ -516,16 +551,27 @@ void Board::Draw() {
 
 void Board::drawLegal()
 {
+
 	for (size_t i = 0; i < temp_moves.size(); i++)
 	{
 		int index = temp_moves[i];
 		SDL_Color temp;
 		temp.r = (colSquares[index].r + 120) / 2;
 		temp.g = (colSquares[index].g + 228) / 2;
-		temp.b = (colSquares[index].g + 148) / 2; temp.a = 100;
+		temp.b = (colSquares[index].g + 148) / 2; temp.a = 255;
 		colSquares[index] = temp;
-		
+
 	}
+	legalDrawn = true;
+
+}
+void Board::unmarkLegal() {
+
+	for (size_t i = 0; i < temp_moves.size(); i++)
+	{
+		unmark(temp_moves[i]);
+	}
+	legalDrawn = false;
 }
 
 

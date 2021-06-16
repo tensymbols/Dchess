@@ -13,6 +13,7 @@ public:
 	void Init(const char* fen);
 	void Draw() override; // draws board and pieces
 	void drawLegal();
+	void unmarkLegal();
 	void Show(); // debug (deprecated xd)
 	
 	void Move(const char*);  // move function for text moves
@@ -43,9 +44,15 @@ private:
 	int fullClock;
 	int sqr_dim;
 	int brd_dim=8;
-	int prevMarked=0;
+//////////////
+		int prevMarked = 0;
+		bool legalDrawn = 0;
+		bool LMB_STATE = 0;
+//////////////
+
 	std::vector<int> legal(Pos delta, int pos);
 	bool isLegal(Piece*, int pos);
+
 	Piece* holdPiece;
 	std::vector<int> temp_moves;
 	bool marked[64];
