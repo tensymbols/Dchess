@@ -414,7 +414,7 @@ std::vector<int> Board::allLegal( Piece* p)
 		  break;
 	case 2: {
 		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal_temp = legal(deltas, currPos, 1);
+		legal_temp = legal(deltas, currPos, brd_dim);
 		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
 	}
 		  break;
