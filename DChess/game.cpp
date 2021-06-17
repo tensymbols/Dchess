@@ -38,8 +38,9 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 		gameObject::gfx = gfx;
 
 		brd = new Board("textures/pieces0.png", {128,128 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 }, 64);
-		//const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
-		const char fen[] = { "8/8/8/8/RrBbQqq " };
+		const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
+		//const char fen[] = { "8/8/8/8/RrBbQqq " };
+		//const char fen[] = { "rnbqkbnr/pppppppp/PPPPPPPP/RNBQKBNR " };
 		brd->Init(fen);
 		isRunning = true;
 		

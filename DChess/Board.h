@@ -26,14 +26,19 @@ public:
 	void handleEvent(SDL_Event&); // handles events like mouse etc 
 
 
-	std::vector<int> allLegal(Piece*, int pos);
+
+	std::vector<int> allLegal(Piece*);
 
 	Pos getAbsPosition(int pos); // get absolute position of the piece (screen coords)
 	int getPosFromMouse(Pos);
-	static int getNumberPos(const char*);
-	static const char* getPosFromNumber(const int);
-	static Pos getCoordFromNumber(const int pos);
-	static int getTypeFromLetter(const char c);
+
+	 int getNumberPos(const char*);
+	 const char* getPosFromNumber(const int);
+
+	 Pos getCoordFromNumber(const int pos);
+	 int getNumberFromCoord(Pos);
+
+	 int getTypeFromLetter(const char c);
 	
 	void changeColor(SDL_Color, SDL_Color);
 	
@@ -50,7 +55,7 @@ private:
 		bool LMB_STATE = 0;
 //////////////
 
-	std::vector<int> legal(Pos delta, int pos);
+	std::vector<int> legal(std::vector<Pos>& deltas, int pos, int depth);
 	bool isLegal(Piece*, int pos);
 
 	Piece* holdPiece;

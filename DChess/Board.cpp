@@ -208,6 +208,12 @@ Pos Board::getCoordFromNumber(const int pos)
 	return temp;
 }
 
+int Board::getNumberFromCoord(Pos pos)
+{
+
+	return (pos.y*brd_dim+pos.x);
+}
+
 void Board::keepInsde(Pos &pos)
 {
 	Pos brdpos = this->getPos();
@@ -269,7 +275,7 @@ void Board::handleEvent(SDL_Event &e)
 					unmarkLegal();
 					if (BoardState[pos_] != NULL) {
 						holdPiece = BoardState[pos_]; // if mouse position is inside board and square where mouse is at is not empty holdpiece is initialized
-						temp_moves = allLegal(holdPiece, pos_);
+						temp_moves = allLegal(holdPiece);
 						drawLegal();
 						
 
@@ -337,40 +343,46 @@ bool Board::isLegal( Piece* p, int pos) {
 	return (it != temp_moves.end()); // if iterator reaches moves.end then there is no position we are trying to put our piece to among available legal moves
 
 }
-std::vector<int> Board::legal(Pos delta, int pos) { // part of available moves (for rook bishop and queen)
-	Pos coord = Board::getCoordFromNumber(pos);
-	
-	std::vector<int> lmoves;
-	coord += delta;
-	
-	while
-		(coord.x >= 0 && coord.x < brd_dim &&
-		 coord.y >= 0 && coord.y < brd_dim)
-	{	
-	
-		int t_pos = coord.y * brd_dim + coord.x;
-		if (BoardState[t_pos] == NULL) {
-			lmoves.push_back(t_pos);
-			//std::cout << "check2\n";
-		}
-		else {
-			if (BoardState[t_pos]->GetColor() != sideToMove) lmoves.push_back(t_pos);
-			break;
-		}
-		coord += delta;
-	}
+std::vector<int> Board::legal(std::vector<Pos>& deltas, int pos, int depth) { // part of available moves (for rook bishop and queen)
 
+	Pos coord = Board::getCoordFromNumber(pos);
+	std::vector<int> lmoves;
+	Pos delta;
+	for(size_t i=0; i<deltas.size();i++)
+	{
+		delta=deltas[i];
+		coord += delta;
+
+		for (size_t i = 0; i < depth && coord.x >= 0 && coord.x < brd_dim &&
+			coord.y >= 0 && coord.y < brd_dim; i++)
+
+		{
+			int t_pos = coord.y * brd_dim + coord.x;
+			if (BoardState[t_pos] == NULL) {
+				lmoves.push_back(t_pos);
+				//std::cout << "check2\n";
+			}
+			else {
+				if (BoardState[t_pos]->GetColor() != sideToMove) lmoves.push_back(t_pos);
+				break;
+			}
+			coord += delta;
+		}
+		coord = Board::getCoordFromNumber(pos);
+	}
 	return lmoves;
 }
 
-std::vector<int> Board::allLegal( Piece* p,int pos)
+std::vector<int> Board::allLegal( Piece* p)
 {
 
 	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
-//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
+	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
 	std::vector<int> moves;
 	if (p->GetColor() != sideToMove) {
-		std::cout << "This is not your turn now\n";
+		if(sideToMove)
+		std::cout << "Its  "<< " white's "<<" turn now\n";
+		else std::cout << "Its  " << " black's " << " turn now\n";
 		return moves;
 
 	}
@@ -385,61 +397,77 @@ std::vector<int> Board::allLegal( Piece* p,int pos)
 	ttype %= 6;
 	int currPos = p->GetPos();
 	std::vector<int> legal_temp;
+	std::vector<Pos> deltas;
 	switch (ttype) {
 	case 0: {
-		  
-		  legal_temp = legal({ 1, 0 }, currPos);
-		  moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		  legal_temp = legal({ -1,0 }, currPos);
-		  moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		  legal_temp = legal({ 0,1 }, currPos);
-		  moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		  legal_temp = legal({ 0,-1 }, currPos);
-		  moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		  
-		}
-		break;
-	case 1: {
-		
+		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} };
+		legal_temp = legal(deltas, currPos, brd_dim);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+
 	}
 		  break;
-	case 2:
-		legal_temp = legal({ 1, 0 }, currPos);
+	case 1: {
+		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
+		legal_temp = legal(deltas, currPos, 1);
 		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ -1,0 }, currPos);
+	}
+		  break;
+	case 2: {
+		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
+		legal_temp = legal(deltas, currPos, 1);
 		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ 0,1 }, currPos);
+	}
+		  break;
+	case 3: {
+		deltas = { {-2, 1},{2,1},{ -1,2}, {1,2} ,{ -2, -1 }, { 2,-1 },{ -1,-2 },{1,-2 } };
+		legal_temp = legal(deltas, currPos, 1);
 		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ 0,-1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-
-		legal_temp = legal({ -1, -1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ 1,-1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ -1,1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ 1,1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		break;
-	case 3:
-		
-		break;
-	case 4:
-		legal_temp = legal({ -1, -1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ 1,-1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ -1,1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		legal_temp = legal({ 1,1 }, currPos);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
-		break;
-	case 5:
-		
 		break;
 	}
+	case 4: {
+		deltas = { { -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
+		legal_temp = legal(deltas, currPos, brd_dim);
+		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		break;
+	}
+	case 5: {
+		if (p->GetColor()==1) { //white pawn
+			// manually adding legal moves to pawns bc its moves cant be described with legal() function
+			int numPos = currPos - brd_dim - 1;
+			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() !=sideToMove) moves.push_back(numPos);
 
+			numPos = currPos - brd_dim + 1;
+			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() != sideToMove) moves.push_back(numPos);
+
+			numPos = currPos - brd_dim;
+			if (numPos >= 0 && BoardState[numPos] == NULL) {
+				moves.push_back(numPos);
+				if (BoardState[currPos]->IsUntouched()) {
+					numPos = currPos - 2 * brd_dim;
+					if ( BoardState[numPos] == NULL) moves.push_back(numPos);
+				}
+			}
+
+		} 
+		else if (p->GetColor() == 0) { // black pawn
+			int numPos = currPos + brd_dim - 1;
+			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() != sideToMove) moves.push_back(numPos);
+
+			numPos = currPos + brd_dim + 1;
+			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() != sideToMove) moves.push_back(numPos);
+
+			numPos = currPos + brd_dim;
+			if (numPos >= 0 && BoardState[numPos] == NULL) {
+				moves.push_back(numPos);
+				if (BoardState[currPos]->IsUntouched()) {
+					numPos = currPos + 2 * brd_dim;
+					if (BoardState[numPos] == NULL) moves.push_back(numPos);
+				}
+			}
+		}
+		break;
+		}
+	}
 
 	return moves;
 }
@@ -487,7 +515,7 @@ void Board::Move(int pos1, int pos2)
 		}
 		else {
 			//	std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
-			if (!BoardState[pos1]) {
+			if (BoardState[pos1]==NULL) {
 				std::cout << ("Illegal move\n");
 			}
 			else {
@@ -497,7 +525,10 @@ void Board::Move(int pos1, int pos2)
 				BoardState[pos2] = BoardState[pos1];
 
 				BoardState[pos1]->setPos(getAbsPosition(pos2));
+				BoardState[pos1]->Touch();
+
 				BoardState[pos1] = NULL;
+				
 			}
 		}
 	}
