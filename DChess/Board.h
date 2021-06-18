@@ -9,15 +9,14 @@ public:
 	//Piece* GetBrdState(const int);
 	//Board(const char*, Pos, SDL_Color wf, SDL_Color bf, int dim, int w, int h );
 	using gameObject::Move;
-	Board(const char*, Pos, SDL_Color wf, SDL_Color bf, int dim);
+	Board(const char*, Pos, SDL_Color wf, SDL_Color bf,int brd_dim ,int sqr_dim);
+	~Board();
 	void Init(const char* fen);
 	void Draw() override; // draws board and pieces
 	void drawLegal();
 	void unmarkLegal();
-	void Show(); // debug (deprecated xd)
 	
-	void Move(const char*);  // move function for text moves
-	void Move(int pos1, int pos2); // move function from one position to another (numbers)
+	void move(int pos1, int pos2); // move function from one position to another (numbers)
 
 	void mark(const int); // mark square with color
 	void unmark(const int); // unmark square
@@ -32,24 +31,24 @@ public:
 	Pos getAbsPosition(int pos); // get absolute position of the piece (screen coords)
 	int getPosFromMouse(Pos);
 
-	 int getNumberPos(const char*);
-	 const char* getPosFromNumber(const int);
 
-	 Pos getCoordFromNumber(const int pos);
-	 int getNumberFromCoord(Pos);
+	Pos getCoordFromNumber(const int pos);
+	int getNumberFromCoord(Pos);
 
-	 int getTypeFromLetter(const char c);
+	int getTypeFromLetter(const char c);
 	
 	void changeColor(SDL_Color, SDL_Color);
 	
 
 private:
-	bool sideToMove;// 0 - black, 1 - white
-	int semiClock;
-	int fullClock;
-	int sqr_dim;
+	bool sideToMove=1;// 0 - black, 1 - white
+	int semiClock=0;
+	int fullClock=0;
+	int sqr_dim=0;
 	int brd_dim=8;
 //////////////
+	bool b_check = false;
+	bool w_check = false;
 		int prevMarked = 0;
 		bool legalDrawn = 0;
 		bool LMB_STATE = 0;
@@ -60,13 +59,15 @@ private:
 
 	Piece* holdPiece;
 	std::vector<int> temp_moves;
-	bool marked[64];
-	SDL_Color colSquares[64];
+	bool* marked;
+	SDL_Color* colSquares;
+	SDL_Rect* squares;
+
 	SDL_Color bfield;
 	SDL_Color wfield;
 	std::vector<Piece*> pieces_; // contains ehm... uwu...  >w<
-	Piece* BoardState[64]; // contains "references" to pieces, refers to NULL when cell is not occupied*/
-	SDL_Rect squares[64];
+	Piece** BoardState; // contains "references" to pieces, refers to NULL when cell is not occupied*/
+	
 };
 
 

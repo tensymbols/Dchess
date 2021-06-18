@@ -4,40 +4,25 @@
 	
 
 
-/*Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int sqr_dim, int w, int h) : gameObject(texfile,pos_,w, h), bfield(bf), wfield(wf), sqr_dim(sqr_dim)
+Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_dim ,int sqr_dim) :
+	gameObject(texfile,  pos_,sqr_dim*brd_dim,sqr_dim*brd_dim), bfield(bf), wfield(wf), sqr_dim(sqr_dim), brd_dim(brd_dim)
 {
-	for (size_t i = 0; i < 64; i++) {
-		BoardState[i] = NULL;
-		marked[i] = 0;
-	}
-	fullClock = 0;
-	semiClock = 0;
-	sideToMove = 1;
-	for (size_t i = 0; i < 8; i++)
-	{
-		for (size_t j = 0; j < 8; j++)
-		{
-			int index = j + i * 8;
-			squares[index].w = sqr_dim,
-			squares[index].h = sqr_dim;
-			squares[index].x = this->getPos().x + j * sqr_dim;
-			squares[index].y = this->getPos().y + i * sqr_dim;
-//			std::cout << index << " " << squares[index].w << " " << squares[index].h << " " << squares[index].x << " " << squares[index].y<< "\n";
-		}
-	}
-}*/
-Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int sqr_dim) : gameObject(texfile,  pos_,sqr_dim*8,sqr_dim*8), bfield(bf), wfield(wf), sqr_dim(sqr_dim)
-{
+	int b_size = brd_dim * brd_dim;
 	holdPiece = NULL;
-	for (size_t i = 0; i < 64; i++) { // 
+	BoardState = new Piece*[b_size];
+	marked = new bool[b_size];
+	colSquares = new SDL_Color[b_size];
+	squares = new SDL_Rect[b_size];
+
+	for (size_t i = 0; i < b_size; i++) { // 
 		BoardState[i] = NULL;
 		marked[i] = 0;
 	}
-	for (size_t i = 0; i < 8; i++) // squares color init
+	for (int i = 0; i < brd_dim; i++) // squares color init
 	{
-		for (size_t j = 0; j < 8; j++)
+		for (int j = 0; j < brd_dim; j++)
 		{
-			int index = j + i * 8;
+			int index = j + i * brd_dim;
 			if ((i + j) % 2)
 				colSquares[index] = wf;
 			else
@@ -47,11 +32,11 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int sqr_
 	fullClock = 0;
 	semiClock = 0;
 	sideToMove = 1;
-	for (size_t i = 0; i < 8; i++)
+	for (int i = 0; i < brd_dim; i++)
 	{
-		for (size_t j = 0; j < 8; j++)
+		for (int j = 0; j < brd_dim; j++)
 		{
-			int index = j + i * 8;
+			int index = getNumberFromCoord({j,i});
 			squares[index].w = sqr_dim,
 			squares[index].h = sqr_dim;
 			squares[index].x = this->getPos().x + j * sqr_dim;
@@ -60,6 +45,13 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int sqr_
 	}
 }
 
+Board::~Board()
+{
+	delete[] marked;
+	delete[] colSquares;
+	delete[] squares;
+	delete[] BoardState;
+}
 
 void Board::Init(const char* fen)
 {
@@ -161,48 +153,16 @@ int Board::getPosFromMouse(Pos pos)
 	AbsativePos.y = pos.y - brdPos.y;
 	int i = AbsativePos.x / sqr_dim;
 	int j = AbsativePos.y / sqr_dim;
-	int pos_ = j * 8 + i;
+	int pos_ = j * brd_dim + i;
 	return pos_;
 }
 
-int Board::getNumberPos(const char* coord)
-{
-	/*char k;
-	k = 0;
-	while (coord[k]!='\0')
-		k++;*/
 
-	bool wrongInput =
-		((coord[0] < 97 || coord[0] > 104) ||
-			(coord[1] < 48 || coord[1]>56));
-	if (wrongInput) {
-		throw std::string("Incorrect input");
-		//return -1;
-	}
-	else {
-		int j = (coord[0] - 97);
-		int i = 7 - (coord[1] - 48 - 1);
-		//std::cout << i << " " << j;  //i*sqr_dim+j = pos; 
-		return (i * 8 + j);
-
-	}
-}
-
-const char* Board::getPosFromNumber(const int pos)
-{
-	char pos_[2];
-	int num = pos / 8 + 1;
-	char letter = 64 - (pos / 8) + 97;
-
-	pos_[0] = letter;
-	pos_[1] = num + 48;
-	return pos_;
-}
 Pos Board::getCoordFromNumber(const int pos)
 {
 
-	int y = pos / 8;
-	int x = pos-y*8;
+	int y = pos / brd_dim;
+	int x = pos-y*brd_dim;
 
 	Pos temp = {x,y };
 	return temp;
@@ -217,8 +177,8 @@ int Board::getNumberFromCoord(Pos pos)
 void Board::keepInsde(Pos &pos)
 {
 	Pos brdpos = this->getPos();
-	int x_right = brdpos.x + sqr_dim * 8;
-	int y_down = brdpos.y + sqr_dim * 8;
+	int x_right = brdpos.x + sqr_dim * brd_dim;
+	int y_down = brdpos.y + sqr_dim * brd_dim;
 	int x_left = brdpos.x;
 	int y_up = brdpos.y;
 	if (pos.x > x_right) pos.x = x_right;
@@ -306,17 +266,17 @@ void Board::handleEvent(SDL_Event &e)
 
 
 						if (isLegal(holdPiece, pos_)) { // if move is legal
-							Move(holdPiece->GetPos(), pos_); // move piece to specified position
+							move(holdPiece->GetPos(), pos_); // move piece to specified position
 							sideToMove = !sideToMove;
 							unmarkLegal();
 						}
 						else {
-							Move(holdPiece->GetPos(), holdPiece->GetPos()); // if not legal then move piece back
+							move(holdPiece->GetPos(), holdPiece->GetPos()); // if not legal then move piece back
 
 						}
 					}
 					else {
-						Move(holdPiece->GetPos(), holdPiece->GetPos()); // if mouse is outside the board bring held piece back
+						move(holdPiece->GetPos(), holdPiece->GetPos()); // if mouse is outside the board bring held piece back
 
 					}
 				}
@@ -480,34 +440,9 @@ Pos Board::getAbsPosition(int pos)
 }
 
 
-void Board::Move(const char* coord) {
-
-	char pos1[2] = { coord[0], coord[1] };
-	//std::cout << pos1[0] << pos1[1] << " ";
-	char pos2[2] = { coord[3], coord[4] };
-	//	std::cout << pos2[0] << pos2[1] << "\n";
-	try {
-		int pos1_ = getNumberPos(pos1);
-		int pos2_ = getNumberPos(pos2);
-	//	std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
-		if (!BoardState[pos1_] || pos1_ == pos2_) {
-			std::cout << ("Illegal move\n");
-		}
-		else {
-			BoardState[pos1_]->Move(pos2_);
-			BoardState[pos2_] = BoardState[pos1_];
-			BoardState[pos1_] = NULL;
-		}
-	}
-	catch (...) {
-		throw;
-	}
-	//	std::cout << pos1_ << " " << pos2_;
-		// {
-}
-
-void Board::Move(int pos1, int pos2)
+void Board::move(int pos1, int pos2)
 {
+
 
 	try {
 		if (pos1 == pos2) {
@@ -532,6 +467,7 @@ void Board::Move(int pos1, int pos2)
 			}
 		}
 	}
+	
 	catch (...) {
 		throw;
 	}

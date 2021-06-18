@@ -37,10 +37,10 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 		graphics::renderer = renderer;
 		gameObject::gfx = gfx;
 
-		brd = new Board("textures/pieces0.png", {128,128 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 }, 64);
+		brd = new Board("textures/pieces0.png", {64,64 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, 10, 64);
 		const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
-		//const char fen[] = { "8/8/8/8/RrBbQqq " };
-		//const char fen[] = { "rnbqkbnr/pppppppp/PPPPPPPP/RNBQKBNR " };
+		//const char fen[] = { "nnnnn/NNNNNN " };
+		//const char fen[] = { "qqqqqqqqqq/5555555555/QQQQQQQQQQ " };
 		brd->Init(fen);
 		isRunning = true;
 		
@@ -77,30 +77,13 @@ void game::handleEvents()
 
 void game::update()
 {
-	/*std::string pos;
-	cnt++;
-	try{
-		std::cin >> pos;
-		const char* p = pos.c_str();
-		brd->Move(p);
-	}
-	catch (std::string s) {
-		std::cout << s << "\n";
-		getchar();
-	}*/
-	
+
 }
 
 void game::render()
 {
 	SDL_RenderClear(renderer);
-	
-	/*for (size_t i = 0; i < 12; i++)
-	{
-		SDL_RenderCopy(renderer, piecesTex, &pieceTexRekts[i], &piecePosRekts[i]);
-	}*/
 
-	//SDL_RenderCopy(renderer, piecesTex, &pieceRekts[i], &dstRekt);
 	brd->Draw();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderPresent(renderer);
