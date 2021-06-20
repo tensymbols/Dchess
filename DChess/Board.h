@@ -8,39 +8,70 @@ public:
 	
 	//Piece* GetBrdState(const int);
 	//Board(const char*, Pos, SDL_Color wf, SDL_Color bf, int dim, int w, int h );
-	Board(const char*, Pos, SDL_Color wf, SDL_Color bf, int dim);
-	void Init(const char* fen);
-	void Draw() override;
-	void Show();
 	using gameObject::Move;
-	void Move(const char*);
-	void Move(int pos1, int pos2);
-	void mark(const int);
-	void unmark(const int);
-	void keepInsde(Pos&);
-	void handleEvent(SDL_Event&);
-	Pos getRelPosition(int pos);
-	static int GetNumberPos(const char*);
-	static const char* GetPosFromNumber(const int);
-	static Pos GetCoordFromNumber(const int pos);
-	static int getTypeFromLetter(const char c);
+	Board(const char*, Pos, SDL_Color wf, SDL_Color bf,int brd_dim ,int sqr_dim);
+	~Board();
+	void Init( char* fen);
+	void Init();
+	void Draw() override; // draws board and pieces
+	void drawLegal();
+	void unmarkLegal();
+	
+	void move(int pos1, int pos2); // move function from one position to another (numbers)
+
+	void mark(const int); // mark square with color
+	void unmark(const int); // unmark square
+	void keepInsde(Pos&); // keep piece inside while dragging when mouse position is out of board borders on screen
+	
+	void handleEvent(SDL_Event&); // handles events like mouse etc 
+
+
+
+	std::vector<int> allLegal(Piece*);
+
+	Pos getAbsPosition(int pos); // get absolute position of the piece (screen coords)
+	int getPosFromMouse(Pos);
+
+
+	Pos getCoordFromNumber(const int pos);
+	int getNumberFromCoord(Pos);
+
+	int getTypeFromLetter(const char c);
+	
 	void changeColor(SDL_Color, SDL_Color);
-	int getPosFromMouse( Pos);
+	
 
 private:
-	bool sideToMove;// 0 - black, 1 - white
-	int semiClock;
-	int fullClock;
-	int dim;
-	int prevMarked=0;
-	Piece* holdPiece;
-	bool marked[64];
-	SDL_Color colSquares[64];
+	bool sideToMove=1;// 0 - black, 1 - white
+	int semiClock=0;
+	int fullClock=0;
+	int sqr_dim=0;
+	int brd_dim=8;
+//////////////
+	bool b_check = false;
+	bool w_check = false;
+		int prevMarked = 0;
+		bool legalDrawn = 0;
+		bool LMB_STATE = 0;
+		bool initialized=0;
+//////////////
+
+	 char _fen[256];
+
+	std::vector<int> legal(std::vector<Pos>& deltas, int pos, int depth);
+	bool isLegal(Piece*, int pos);
+
+	Piece* holdPiece=NULL;
+	std::vector<int> temp_moves;
+	bool* marked;
+	SDL_Color* colSquares=NULL;
+	SDL_Rect* squares=NULL;
+
 	SDL_Color bfield;
 	SDL_Color wfield;
 	std::vector<Piece*> pieces_; // contains ehm... uwu...  >w<
-	Piece* BoardState[64]; // contains "references" to pieces, refers to NULL when cell is not occupied*/
-	SDL_Rect squares[64];
+	Piece** BoardState=NULL; // contains "references" to pieces, refers to NULL when cell is not occupied*/
+	
 };
 
 

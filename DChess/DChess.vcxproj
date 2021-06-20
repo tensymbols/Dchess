@@ -155,6 +155,8 @@
     <ClCompile Include="Board.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="gameObject.cpp" />
+    <ClCompile Include="graphics.cpp" />
+    <ClCompile Include="gInterface.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="piece.cpp" />
     <ClCompile Include="texmng.cpp" />
@@ -163,6 +165,8 @@
     <ClInclude Include="Board.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="gameObject.h" />
+    <ClInclude Include="graphics.h" />
+    <ClInclude Include="gInterface.h" />
     <ClInclude Include="piece.h" />
     <ClInclude Include="pos.h" />
     <ClInclude Include="texmng.h" />

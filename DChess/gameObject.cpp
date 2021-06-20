@@ -3,7 +3,7 @@
 
 gameObject::gameObject(const char* texfile,  Pos pos, int w, int h) : pos_(pos), width(w), height(h)
 {
-	texture_ = texLoader::loadTexture(texfile, rnd);
+	if(texfile)	texture_ = texLoader::loadTexture(texfile, rnd);
 }
 gameObject::gameObject(const char* texfile, Pos pos) : pos_(pos)
 {
@@ -37,6 +37,16 @@ void gameObject::setPos(Pos pos)
 	pos_ = pos;
 }
 
+
+
+int gameObject::getW() const
+{
+	return width;
+}
+int gameObject::getH() const
+{
+	return height;
+}
 
 
 bool gameObject::isInside(Pos coord)

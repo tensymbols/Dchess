@@ -1,11 +1,15 @@
 #include "game.h"
-
+#include "gInterface.h"
 #include "Board.h"
 #include "texmng.h"
 #include <iostream>
 
 SDL_Renderer* gameObject::rnd = nullptr;
+SDL_Renderer* graphics::renderer = nullptr;
+graphics* gameObject::gfx = nullptr;
+graphics* gfx;
 Board* brd;
+gInterface* _interface;
 
 
 game::game() :isRunning(false)
@@ -29,10 +33,16 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 			
 
 		}
+		
 		gameObject::rnd = renderer;
+		graphics::renderer = renderer;
+		gameObject::gfx = gfx;
 
-		brd = new Board("textures/pieces0.png", {64,64 }, { 99, 65, 34,255 }, { 255, 221, 191, 255 }, 64);
-		const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
+		brd = new Board("textures/pieces0.png", {64,64 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, 8, 64);
+		_interface = new gInterface({32,32},NULL,*brd);
+		 char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " }; // 8x8 standard
+	//	const char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
+
 		brd->Init(fen);
 		isRunning = true;
 		
@@ -51,16 +61,18 @@ void game::handleEvents()
 			break;
 		case SDL_MOUSEMOTION:
 			brd->handleEvent(event);
-		//	else brd->unmark(brd->getPosFromMouse(mpos));
-			
-		//	std::cout << event.motion.x << " " << event.motion.y << "\n";
-		
+			_interface->handleEvent(event);
+
 			break;
 		case SDL_MOUSEBUTTONDOWN:
+			_interface->handleEvent(event);
 			brd->handleEvent(event);
+			
+			
 			break;
 		case SDL_MOUSEBUTTONUP:
 			brd->handleEvent(event);
+			_interface->handleEvent(event);
 			break;
 		default:
 			break;
@@ -69,31 +81,15 @@ void game::handleEvents()
 
 void game::update()
 {
-	/*std::string pos;
-	cnt++;
-	try{
-		std::cin >> pos;
-		const char* p = pos.c_str();
-		brd->Move(p);
-	}
-	catch (std::string s) {
-		std::cout << s << "\n";
-		getchar();
-	}*/
-	
+
 }
 
 void game::render()
 {
 	SDL_RenderClear(renderer);
-	
-	/*for (size_t i = 0; i < 12; i++)
-	{
-		SDL_RenderCopy(renderer, piecesTex, &pieceTexRekts[i], &piecePosRekts[i]);
-	}*/
 
-	//SDL_RenderCopy(renderer, piecesTex, &pieceRekts[i], &dstRekt);
 	brd->Draw();
+	_interface->Draw();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderPresent(renderer);
 	
