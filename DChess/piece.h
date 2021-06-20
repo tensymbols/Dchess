@@ -15,7 +15,7 @@ public:
 //	void Draw() override;
 	int GetPos() { return pos; }
 	bool GetColor() { return color; }
-	bool IsUntouched() { std::cout << touch << "\n"; return (touch == 0); }
+	bool IsUntouched() { return (touch == 0); }
 	int GetType() { return type; }
 	//bool moveLegal(int pos);
 

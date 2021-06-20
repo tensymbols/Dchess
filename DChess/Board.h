@@ -11,7 +11,8 @@ public:
 	using gameObject::Move;
 	Board(const char*, Pos, SDL_Color wf, SDL_Color bf,int brd_dim ,int sqr_dim);
 	~Board();
-	void Init(const char* fen);
+	void Init( char* fen);
+	void Init();
 	void Draw() override; // draws board and pieces
 	void drawLegal();
 	void unmarkLegal();
@@ -52,21 +53,24 @@ private:
 		int prevMarked = 0;
 		bool legalDrawn = 0;
 		bool LMB_STATE = 0;
+		bool initialized=0;
 //////////////
+
+	 char _fen[256];
 
 	std::vector<int> legal(std::vector<Pos>& deltas, int pos, int depth);
 	bool isLegal(Piece*, int pos);
 
-	Piece* holdPiece;
+	Piece* holdPiece=NULL;
 	std::vector<int> temp_moves;
 	bool* marked;
-	SDL_Color* colSquares;
-	SDL_Rect* squares;
+	SDL_Color* colSquares=NULL;
+	SDL_Rect* squares=NULL;
 
 	SDL_Color bfield;
 	SDL_Color wfield;
 	std::vector<Piece*> pieces_; // contains ehm... uwu...  >w<
-	Piece** BoardState; // contains "references" to pieces, refers to NULL when cell is not occupied*/
+	Piece** BoardState=NULL; // contains "references" to pieces, refers to NULL when cell is not occupied*/
 	
 };
 

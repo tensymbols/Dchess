@@ -1,5 +1,5 @@
 #include "game.h"
-
+#include "gInterface.h"
 #include "Board.h"
 #include "texmng.h"
 #include <iostream>
@@ -9,6 +9,7 @@ SDL_Renderer* graphics::renderer = nullptr;
 graphics* gameObject::gfx = nullptr;
 graphics* gfx;
 Board* brd;
+gInterface* _interface;
 
 
 game::game() :isRunning(false)
@@ -37,10 +38,11 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 		graphics::renderer = renderer;
 		gameObject::gfx = gfx;
 
-		brd = new Board("textures/pieces0.png", {64,64 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, 10, 64);
-		const char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " };
-		//const char fen[] = { "nnnnn/NNNNNN " };
-		//const char fen[] = { "qqqqqqqqqq/5555555555/QQQQQQQQQQ " };
+		brd = new Board("textures/pieces0.png", {64,64 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, 8, 64);
+		_interface = new gInterface({32,32},NULL,*brd);
+		 char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " }; // 8x8 standard
+	//	const char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
+
 		brd->Init(fen);
 		isRunning = true;
 		
@@ -59,16 +61,18 @@ void game::handleEvents()
 			break;
 		case SDL_MOUSEMOTION:
 			brd->handleEvent(event);
-		//	else brd->unmark(brd->getPosFromMouse(mpos));
-			
-		//	std::cout << event.motion.x << " " << event.motion.y << "\n";
-		
+			_interface->handleEvent(event);
+
 			break;
 		case SDL_MOUSEBUTTONDOWN:
+			_interface->handleEvent(event);
 			brd->handleEvent(event);
+			
+			
 			break;
 		case SDL_MOUSEBUTTONUP:
 			brd->handleEvent(event);
+			_interface->handleEvent(event);
 			break;
 		default:
 			break;
@@ -85,6 +89,7 @@ void game::render()
 	SDL_RenderClear(renderer);
 
 	brd->Draw();
+	_interface->Draw();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderPresent(renderer);
 	

@@ -52,13 +52,37 @@ Board::~Board()
 	delete[] squares;
 	delete[] BoardState;
 }
-
-void Board::Init(const char* fen)
+void Board::Init() {
+	Init(_fen);
+}
+void Board::Init( char* fen)
 {
 	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
 	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
+	
+	if(!initialized)strcpy(_fen, fen);
+	if (initialized) {
+		
+		unmarkLegal();
+		pieces_.clear();
+		temp_moves.clear();
+		holdPiece = NULL;
+
+		for (size_t i = 0; i < pieces_.size(); i++)
+			delete pieces_[i];
+
+		delete[] BoardState; 
+		int b_size = brd_dim * brd_dim;
+
+		BoardState = new Piece * [b_size];
+		for (size_t i = 0; i < b_size; i++)
+			BoardState[i] = NULL;
+		
+	
 
 
+	}
+	
 	// fen reading;
 	sideToMove = 1;
 	semiClock = 0;
@@ -94,6 +118,8 @@ void Board::Init(const char* fen)
 		}
 		k++;
 	}
+	std::cout << "INTI";
+	initialized = true;
 }
 
 int Board::getTypeFromLetter(const char c) {
@@ -215,7 +241,7 @@ void Board::handleEvent(SDL_Event &e)
 				keepInsde(mpos);
 				holdPiece->setPos({ mpos.x - sqr_dim / 2,mpos.y - sqr_dim / 2 });
 			}
-			unmark(prevMarked);
+		//	unmark(prevMarked);
 		}
 		break;
 	case SDL_MOUSEBUTTONDOWN:
@@ -229,10 +255,10 @@ void Board::handleEvent(SDL_Event &e)
 				int x, y;
 				SDL_GetMouseState(&x, &y);
 				Pos mpos; mpos.x = x; mpos.y = y;
-
+				unmarkLegal();
 				if (isInside(mpos)) {
 					int pos_ = getPosFromMouse(mpos);
-					unmarkLegal();
+					
 					if (BoardState[pos_] != NULL) {
 						holdPiece = BoardState[pos_]; // if mouse position is inside board and square where mouse is at is not empty holdpiece is initialized
 						temp_moves = allLegal(holdPiece);

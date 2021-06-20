@@ -19,3 +19,15 @@ void graphics::DrawRect(SDL_Color cl, SDL_Rect rect)
 	SDL_RenderFillRect(renderer, &rect);
 	SDL_RenderDrawRect(renderer, &rect);
 }
+
+void graphics::DrawRect(SDL_Color cl, Pos pos, int w, int h)
+{
+	SDL_Rect rect;
+	rect.x = pos.x;
+	rect.y = pos.y;
+	rect.w = w; 
+	rect.h = h;
+	SDL_SetRenderDrawColor(renderer, cl.r, cl.g, cl.b, 255);
+	SDL_RenderFillRect(renderer, &rect);
+	SDL_RenderDrawRect(renderer, &rect);
+}
