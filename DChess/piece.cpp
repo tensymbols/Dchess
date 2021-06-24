@@ -26,6 +26,27 @@ void Piece::InitPiece(int type, bool color, int pos)
 	this->pos = pos;
 }
 
+void Piece::addMove(int pos)
+{
+	aMoves.push_back(pos);
+}
+
+bool Piece::isMoveA(int pos)
+{
+	std::vector<int>::iterator it;
+	it = std::find(aMoves.begin(), aMoves.end(), pos);
+	return it != aMoves.end();
+}
+
+std::vector<int> Piece::getMoves()
+{
+	return aMoves;
+}
+
+void Piece::clearMoves() {
+	aMoves.clear();
+}
+
 void Piece::Move(const int pos) {
 	this->pos = pos;
 

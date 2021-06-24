@@ -39,9 +39,9 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 		gameObject::gfx = gfx;
 
 		brd = new Board("textures/pieces0.png", {64,64 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, 8, 64);
-		_interface = new gInterface({32,32},NULL,*brd);
+		_interface = new gInterface({64,16},NULL,*brd);
 		 char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " }; // 8x8 standard
-	//	const char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
+		// char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
 
 		brd->Init(fen);
 		isRunning = true;

@@ -17,7 +17,7 @@ public:
 	void drawLegal();
 	void unmarkLegal();
 	
-	void move(int pos1, int pos2); // move function from one position to another (numbers)
+	void move(int pos1, int pos2, bool realBoard); // move function from one position to another (numbers)
 
 	void mark(const int); // mark square with color
 	void unmark(const int); // unmark square
@@ -25,9 +25,12 @@ public:
 	
 	void handleEvent(SDL_Event&); // handles events like mouse etc 
 
+	void nextTurn();
 
+	void allPseudoLegal(Piece*, bool realBoard);
+	void potentialChecks(Piece* p);
 
-	std::vector<int> allLegal(Piece*);
+	void processCheck(bool side);
 
 	Pos getAbsPosition(int pos); // get absolute position of the piece (screen coords)
 	int getPosFromMouse(Pos);
@@ -47,19 +50,22 @@ private:
 	int fullClock=0;
 	int sqr_dim=0;
 	int brd_dim=8;
+
+	std::vector<int> b_check;
+	std::vector<int> w_check;
+
 //////////////
-	bool b_check = false;
-	bool w_check = false;
+	
 		int prevMarked = 0;
 		bool legalDrawn = 0;
 		bool LMB_STATE = 0;
 		bool initialized=0;
 //////////////
 
-	 char _fen[256];
+	char _fen[256];
 
-	std::vector<int> legal(std::vector<Pos>& deltas, int pos, int depth);
-	bool isLegal(Piece*, int pos);
+	void legal(std::vector<Pos>& deltas, int pos, int depth, int typeOfCheck);
+
 
 	Piece* holdPiece=NULL;
 	std::vector<int> temp_moves;
@@ -70,8 +76,9 @@ private:
 	SDL_Color bfield;
 	SDL_Color wfield;
 	std::vector<Piece*> pieces_; // contains ehm... uwu...  >w<
-	Piece** BoardState=NULL; // contains "references" to pieces, refers to NULL when cell is not occupied*/
-	
+	Piece** BoardState=NULL;
+	Piece** tempBoard = NULL;// contains "references" to pieces, refers to NULL when cell is not occupied*/
+	Piece* bKing = NULL; Piece* wKing = NULL;
 };
 
 

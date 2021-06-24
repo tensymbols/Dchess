@@ -2,7 +2,10 @@
 #include <iostream>
 #include <string>
 	
-
+#define FIND_CHECKS 0
+#define FIND_LEGAL 1
+#define REAL_BOARD 1
+#define TEMP_BOARD 0
 
 Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_dim ,int sqr_dim) :
 	gameObject(texfile,  pos_,sqr_dim*brd_dim,sqr_dim*brd_dim), bfield(bf), wfield(wf), sqr_dim(sqr_dim), brd_dim(brd_dim)
@@ -31,7 +34,7 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 	}
 	fullClock = 0;
 	semiClock = 0;
-	sideToMove = 1;
+	sideToMove = 0;
 	for (int i = 0; i < brd_dim; i++)
 	{
 		for (int j = 0; j < brd_dim; j++)
@@ -43,6 +46,7 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 			squares[index].y = this->getPos().y + i * sqr_dim;
 		}
 	}
+
 }
 
 Board::~Board()
@@ -78,13 +82,10 @@ void Board::Init( char* fen)
 		for (size_t i = 0; i < b_size; i++)
 			BoardState[i] = NULL;
 		
-	
-
-
 	}
 	
 	// fen reading;
-	sideToMove = 1;
+	sideToMove = 0;
 	semiClock = 0;
 	fullClock = 0;
 	int pos = 0;
@@ -111,6 +112,9 @@ void Board::Init( char* fen)
 		//	std::cout << AbsPosition.x << " " << AbsPosition.y << "\n";
 			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName.c_str(),getAbsPosition(pos),sqr_dim,sqr_dim));
 
+			if (ttype == 1) wKing = pieces_[pieces_.size() - 1];
+			if (ttype == 7) bKing = pieces_[pieces_.size() - 1];
+
 			BoardState[pos] = pieces_[pieces_.size() - 1];
 			
 
@@ -118,8 +122,9 @@ void Board::Init( char* fen)
 		}
 		k++;
 	}
-	std::cout << "INTI";
+	std::cout << "INIT";
 	initialized = true;
+	nextTurn();
 }
 
 int Board::getTypeFromLetter(const char c) {
@@ -260,12 +265,19 @@ void Board::handleEvent(SDL_Event &e)
 					int pos_ = getPosFromMouse(mpos);
 					
 					if (BoardState[pos_] != NULL) {
-						holdPiece = BoardState[pos_]; // if mouse position is inside board and square where mouse is at is not empty holdpiece is initialized
-						temp_moves = allLegal(holdPiece);
-						drawLegal();
-						
-
-
+						// if mouse position is inside board and square where mouse is at is not empty holdpiece is initialized
+						if (BoardState[pos_]->GetColor() != sideToMove) {
+							if (sideToMove)
+								std::cout << "Its  " << " white's " << " turn now\n";
+							else std::cout << "Its  " << " black's " << " turn now\n";
+							temp_moves = std::vector<int>(0);
+						}
+						else {
+							holdPiece = BoardState[pos_];
+	
+							temp_moves = holdPiece->getMoves();
+							drawLegal();
+						}
 					}
 				}
 			}
@@ -291,21 +303,26 @@ void Board::handleEvent(SDL_Event &e)
 						int pos_ = getPosFromMouse(mpos);
 
 
-						if (isLegal(holdPiece, pos_)) { // if move is legal
-							move(holdPiece->GetPos(), pos_); // move piece to specified position
-							sideToMove = !sideToMove;
+						if (holdPiece->isMoveA(pos_)) { // if move is legal
+							move(holdPiece->GetPos(), pos_, REAL_BOARD); // move piece to specified position
 							unmarkLegal();
+							nextTurn();
+
+							
 						}
 						else {
-							move(holdPiece->GetPos(), holdPiece->GetPos()); // if not legal then move piece back
+							move(holdPiece->GetPos(), holdPiece->GetPos(), REAL_BOARD); // if not legal then move piece back
 
 						}
-					}
-					else {
-						move(holdPiece->GetPos(), holdPiece->GetPos()); // if mouse is outside the board bring held piece back
 
 					}
+					else {
+						move(holdPiece->GetPos(), holdPiece->GetPos(), REAL_BOARD); // if mouse is outside the board bring held piece back
+
+					}
+					
 				}
+				
 				holdPiece = NULL;
 			}
 
@@ -315,24 +332,24 @@ void Board::handleEvent(SDL_Event &e)
 		}		break;
 	}
 }
-bool Board::isLegal( Piece* p, int pos) {
+void Board::nextTurn()
+{
+	sideToMove = !sideToMove;
 
-	if (temp_moves.size() == 0) {
-		std::cout << "No legal moves available\n";
-		return false;
-
+	for (size_t i = 0; i < pieces_.size(); i++)
+	{
+		pieces_[i]->clearMoves();
+		allPseudoLegal(pieces_[i], REAL_BOARD);
+		std::cout << i << "\n";
 	}
-
-	std::vector<int>::iterator it;
-	it = std::find(temp_moves.begin(), temp_moves.end(), pos);
-
-	return (it != temp_moves.end()); // if iterator reaches moves.end then there is no position we are trying to put our piece to among available legal moves
-
+	//processCheck(sideToMove);
 }
-std::vector<int> Board::legal(std::vector<Pos>& deltas, int pos, int depth) { // part of available moves (for rook bishop and queen)
+
+
+void Board::legal(std::vector<Pos>& deltas, int pos, int depth, int typeOfcheck) { // part of available moves (for all pieces except pawn)
 
 	Pos coord = Board::getCoordFromNumber(pos);
-	std::vector<int> lmoves;
+
 	Pos delta;
 	for(size_t i=0; i<deltas.size();i++)
 	{
@@ -345,109 +362,152 @@ std::vector<int> Board::legal(std::vector<Pos>& deltas, int pos, int depth) { //
 		{
 			int t_pos = coord.y * brd_dim + coord.x;
 			if (BoardState[t_pos] == NULL) {
-				lmoves.push_back(t_pos);
-				//std::cout << "check2\n";
+				if(typeOfcheck == FIND_LEGAL) BoardState[pos]->addMove(t_pos); // if square is empty we can go there
+				
 			}
 			else {
-				if (BoardState[t_pos]->GetColor() != sideToMove) lmoves.push_back(t_pos);
+				if (BoardState[t_pos]->GetColor() != BoardState[pos]->GetColor()) {
+					BoardState[pos]->addMove(t_pos); // if we bump into piece of opposite color this is our last square we can go to in this direction
+					//if (typeOfcheck == FIND_CHECKS) std::cout << t_pos << " ";
+				}
+		
 				break;
 			}
 			coord += delta;
 		}
 		coord = Board::getCoordFromNumber(pos);
 	}
-	return lmoves;
 }
+void Board::potentialChecks(Piece* p) { 
 
-std::vector<int> Board::allLegal( Piece* p)
+	int kingPos = p->GetPos();
+
+	std::vector<int> pChecks;
+	std::vector<int> legal_temp;
+	std::vector<Pos> deltas0 = { {  1,  0 }, { -1,  0 }, {  0, 1 }, { 0, -1 } , // "queen" moves
+								{ -1, -1 }, {  1, -1 }, { -1, 1 }, { 1,  1 } };
+
+	std::vector<Pos> deltas1 = { { -2,  1 }, { 2,  1 }, { -1, 2 }, { 1,  2 },// "knight" moves
+									{ -2, -1 }, { 2, -1 }, { -1,-2 }, { 1, -2 } }; // casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
+
+	legal(deltas0, kingPos, brd_dim, FIND_CHECKS);
+
+	legal(deltas1, kingPos, 1, FIND_CHECKS);
+
+} //auxiliary function 
+
+void Board::processCheck(bool side)
 {
 
-	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
-	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
-	std::vector<int> moves;
-	if (p->GetColor() != sideToMove) {
-		if(sideToMove)
-		std::cout << "Its  "<< " white's "<<" turn now\n";
-		else std::cout << "Its  " << " black's " << " turn now\n";
-		return moves;
+
+	Piece* KING = (side) ? wKing :  bKing;
+	int kingPos = KING->GetPos();
+	std::vector<int> inCheck ;
+	potentialChecks(KING);
+	std::vector<int> pChecks = KING->getMoves();
+
+
+	std::vector<int> t_pseudo;
+	for (size_t i = 0; i < pChecks.size(); i++)
+	{
+
+		int ix = pChecks[i];
+		allPseudoLegal(BoardState[ix], REAL_BOARD);
+		t_pseudo = BoardState[ix]->getMoves();
+		for (size_t j = 0; j < t_pseudo.size(); j++)
+		{
+			if (t_pseudo[j] == kingPos) {
+				inCheck.push_back(pChecks[i]);
+				std::cout << "\n" << pChecks[i] << "\n";
+			}
+
+		}
+		BoardState[ix]->clearMoves();
 
 	}
 
-	/*if (BoardState[pos] != NULL && BoardState[pos]->GetColor() == p->GetColor())
-	{
-		std::cout << "Cant eat your own pieces\n";
-		return moves;
+	(side) ? w_check = inCheck : b_check = inCheck;
+	KING->clearMoves();
+}
+void Board::allPseudoLegal( Piece* p, bool realBoard)
+{
+	Piece** board = (realBoard) ? BoardState : tempBoard;
 
-	}*/
 	int ttype = p->GetType();
 	ttype %= 6;
 	int currPos = p->GetPos();
+	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
+	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
+	std::vector<int> moves;
+
+
+
 	std::vector<int> legal_temp;
 	std::vector<Pos> deltas;
 	switch (ttype) {
 	case 0: {
 		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} };
-		legal_temp = legal(deltas, currPos, brd_dim);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal(deltas, currPos, brd_dim, FIND_LEGAL);
+
 
 	}
 		  break;
 	case 1: {
 		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal_temp = legal(deltas, currPos, 1);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal(deltas, currPos, 1, FIND_LEGAL);
+
 	}
 		  break;
 	case 2: {
 		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal_temp = legal(deltas, currPos, brd_dim);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal(deltas, currPos, brd_dim, FIND_LEGAL);
+
 	}
 		  break;
 	case 3: {
 		deltas = { {-2, 1},{2,1},{ -1,2}, {1,2} ,{ -2, -1 }, { 2,-1 },{ -1,-2 },{1,-2 } };
-		legal_temp = legal(deltas, currPos, 1);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal(deltas, currPos, 1, FIND_LEGAL);
+		
 		break;
 	}
 	case 4: {
 		deltas = { { -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal_temp = legal(deltas, currPos, brd_dim);
-		moves.insert(moves.end(), legal_temp.begin(), legal_temp.end());
+		legal(deltas, currPos, brd_dim, FIND_LEGAL);
+		
 		break;
 	}
 	case 5: {
 		if (p->GetColor()==1) { //white pawn
 			// manually adding legal moves to pawns bc its moves cant be described with legal() function
 			int numPos = currPos - brd_dim - 1;
-			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() !=sideToMove) moves.push_back(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() !=sideToMove) BoardState[currPos]->addMove(numPos);
 
 			numPos = currPos - brd_dim + 1;
-			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() != sideToMove) moves.push_back(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) BoardState[currPos]->addMove(numPos);
 
 			numPos = currPos - brd_dim;
-			if (numPos >= 0 && BoardState[numPos] == NULL) {
-				moves.push_back(numPos);
-				if (BoardState[currPos]->IsUntouched()) {
+			if (numPos >= 0 && board[numPos] == NULL) {
+				BoardState[currPos]->addMove(numPos);
+				if (board[currPos]->IsUntouched()) {
 					numPos = currPos - 2 * brd_dim;
-					if ( BoardState[numPos] == NULL) moves.push_back(numPos);
+					if (board[numPos] == NULL) BoardState[currPos]->addMove(numPos);
 				}
 			}
 
 		} 
 		else if (p->GetColor() == 0) { // black pawn
 			int numPos = currPos + brd_dim - 1;
-			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() != sideToMove) moves.push_back(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) BoardState[currPos]->addMove(numPos);
 
 			numPos = currPos + brd_dim + 1;
-			if (BoardState[numPos] != NULL && BoardState[numPos]->GetColor() != sideToMove) moves.push_back(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) BoardState[currPos]->addMove(numPos);
 
 			numPos = currPos + brd_dim;
-			if (numPos >= 0 && BoardState[numPos] == NULL) {
-				moves.push_back(numPos);
-				if (BoardState[currPos]->IsUntouched()) {
+			if (numPos >= 0 && board[numPos] == NULL) {
+				BoardState[currPos]->addMove(numPos);
+				if (board[currPos]->IsUntouched()) {
 					numPos = currPos + 2 * brd_dim;
-					if (BoardState[numPos] == NULL) moves.push_back(numPos);
+					if (board[numPos] == NULL) BoardState[currPos]->addMove(numPos);
 				}
 			}
 		}
@@ -455,7 +515,6 @@ std::vector<int> Board::allLegal( Piece* p)
 		}
 	}
 
-	return moves;
 }
 
 Pos Board::getAbsPosition(int pos)
@@ -466,30 +525,32 @@ Pos Board::getAbsPosition(int pos)
 }
 
 
-void Board::move(int pos1, int pos2)
+void Board::move(int pos1, int pos2, bool realBoard)
 {
-
-
+	Piece** board = (realBoard) ? BoardState : tempBoard;
 	try {
 		if (pos1 == pos2) {
-			BoardState[pos1]->setPos(getAbsPosition(pos2));
+			board[pos1]->setPos(getAbsPosition(pos2));
 		}
 		else {
 			//	std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
-			if (BoardState[pos1]==NULL) {
+			if (board[pos1]==NULL) {
 				std::cout << ("Illegal move\n");
 			}
 			else {
-				BoardState[pos1]->Move(pos2);
+				board[pos1]->Move(pos2);
+
+				board[pos1]->clearMoves();
 				//delete BoardState[pos2];
 
-				BoardState[pos2] = BoardState[pos1];
+				board[pos2] = board[pos1];
 
-				BoardState[pos1]->setPos(getAbsPosition(pos2));
-				BoardState[pos1]->Touch();
+				board[pos1]->setPos(getAbsPosition(pos2));
+				board[pos1]->Touch();
 
-				BoardState[pos1] = NULL;
+				board[pos1] = NULL;
 				
+
 			}
 		}
 	}
