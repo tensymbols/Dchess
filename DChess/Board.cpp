@@ -13,6 +13,7 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 	int b_size = brd_dim * brd_dim;
 	holdPiece = NULL;
 	BoardState = new Piece*[b_size];
+	tempBoard = new Piece * [b_size];
 	marked = new bool[b_size];
 	colSquares = new SDL_Color[b_size];
 	squares = new SDL_Rect[b_size];
@@ -340,14 +341,19 @@ void Board::nextTurn()
 	{
 		pieces_[i]->clearMoves();
 		allPseudoLegal(pieces_[i], REAL_BOARD);
-		std::cout << i << "\n";
+
 	}
-	//processCheck(sideToMove);
+	processCheck(sideToMove);
 }
 
 
-void Board::legal(std::vector<Pos>& deltas, int pos, int depth, int typeOfcheck) { // part of available moves (for all pieces except pawn)
+void Board::legal(std::vector<Pos>& deltas, Piece* p, int depth, int typeOfcheck, bool israelboard) { // part of available moves (for all pieces except pawn)
 
+	int pos = p->GetPos();
+	
+	Piece** board = (israelboard) ? BoardState : tempBoard;
+
+	//if (!israelboard) tempPieces_ = pieces_;
 	Pos coord = Board::getCoordFromNumber(pos);
 
 	Pos delta;
@@ -360,19 +366,20 @@ void Board::legal(std::vector<Pos>& deltas, int pos, int depth, int typeOfcheck)
 			coord.y >= 0 && coord.y < brd_dim; i++)
 
 		{
-			int t_pos = coord.y * brd_dim + coord.x;
-			if (BoardState[t_pos] == NULL) {
-				if(typeOfcheck == FIND_LEGAL) BoardState[pos]->addMove(t_pos); // if square is empty we can go there
+			int t_pos = coord.x * brd_dim + coord.y;
+			if (board[t_pos] == NULL) {
+				if(typeOfcheck == FIND_LEGAL) board[pos]->addMove(t_pos); // if square is empty we can go there
 				
 			}
 			else {
-				if (BoardState[t_pos]->GetColor() != BoardState[pos]->GetColor()) {
-					BoardState[pos]->addMove(t_pos); // if we bump into piece of opposite color this is our last square we can go to in this direction
-					//if (typeOfcheck == FIND_CHECKS) std::cout << t_pos << " ";
+				if (board[t_pos]->GetColor() != board[pos]->GetColor()) {
+					p->addMove(t_pos); // if we bump into piece of opposite color this is our last square we can go to in this direction
+					if(typeOfcheck==FIND_CHECKS) std::cout <<"Potential check " << t_pos << "\n";
 				}
 		
 				break;
 			}
+
 			coord += delta;
 		}
 		coord = Board::getCoordFromNumber(pos);
@@ -381,18 +388,19 @@ void Board::legal(std::vector<Pos>& deltas, int pos, int depth, int typeOfcheck)
 void Board::potentialChecks(Piece* p) { 
 
 	int kingPos = p->GetPos();
-
+	std::cout << "KINGPOS " << kingPos<<"\n";
 	std::vector<int> pChecks;
-	std::vector<int> legal_temp;
+
 	std::vector<Pos> deltas0 = { {  1,  0 }, { -1,  0 }, {  0, 1 }, { 0, -1 } , // "queen" moves
-								{ -1, -1 }, {  1, -1 }, { -1, 1 }, { 1,  1 } };
+								 { -1, -1 }, {  1, -1 }, { -1, 1 }, { 1,  1 } };
 
 	std::vector<Pos> deltas1 = { { -2,  1 }, { 2,  1 }, { -1, 2 }, { 1,  2 },// "knight" moves
-									{ -2, -1 }, { 2, -1 }, { -1,-2 }, { 1, -2 } }; // casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
+								 { -2, -1 }, { 2, -1 }, { -1,-2 }, { 1, -2 } }; // casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
 
-	legal(deltas0, kingPos, brd_dim, FIND_CHECKS);
+	legal(deltas0, p, brd_dim, FIND_CHECKS, REAL_BOARD);
 
-	legal(deltas1, kingPos, 1, FIND_CHECKS);
+	legal(deltas1, p, 1, FIND_CHECKS, REAL_BOARD);
+
 
 } //auxiliary function 
 
@@ -402,18 +410,27 @@ void Board::processCheck(bool side)
 
 	Piece* KING = (side) ? wKing :  bKing;
 	int kingPos = KING->GetPos();
+
+	Piece P_Temp = *KING;
+
+
+	memcpy(tempBoard, BoardState, sizeof(Piece)); // making a copy of current state of board to temporary board
+
+
 	std::vector<int> inCheck ;
-	potentialChecks(KING);
-	std::vector<int> pChecks = KING->getMoves();
+	potentialChecks(&P_Temp);
+	std::vector<int> pChecks = P_Temp.getMoves();
 
 
 	std::vector<int> t_pseudo;
-	for (size_t i = 0; i < pChecks.size(); i++)
+
+	std::cout << "size " << pChecks.size() << "\n\n\n";
+/*	for (size_t i = 0; i < pChecks.size(); i++)
 	{
 
 		int ix = pChecks[i];
-		allPseudoLegal(BoardState[ix], REAL_BOARD);
-		t_pseudo = BoardState[ix]->getMoves();
+		std::cout <<"INDEX " << ix << "\n\n\n";
+ 		t_pseudo = BoardState[ix]->getMoves();
 		for (size_t j = 0; j < t_pseudo.size(); j++)
 		{
 			if (t_pseudo[j] == kingPos) {
@@ -422,16 +439,17 @@ void Board::processCheck(bool side)
 			}
 
 		}
-		BoardState[ix]->clearMoves();
+		//BoardState[ix]->clearMoves();
 
-	}
+	}*/
 
 	(side) ? w_check = inCheck : b_check = inCheck;
-	KING->clearMoves();
+
 }
 void Board::allPseudoLegal( Piece* p, bool realBoard)
 {
 	Piece** board = (realBoard) ? BoardState : tempBoard;
+	std::vector<Piece*>& pieces = (realBoard) ? pieces_ : tempPieces_;
 
 	int ttype = p->GetType();
 	ttype %= 6;
@@ -447,32 +465,32 @@ void Board::allPseudoLegal( Piece* p, bool realBoard)
 	switch (ttype) {
 	case 0: {
 		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} };
-		legal(deltas, currPos, brd_dim, FIND_LEGAL);
+		legal(deltas, p, brd_dim, FIND_LEGAL, realBoard);
 
 
 	}
 		  break;
 	case 1: {
 		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal(deltas, currPos, 1, FIND_LEGAL);
+		legal(deltas, p, 1, FIND_LEGAL, realBoard);
 
 	}
 		  break;
 	case 2: {
 		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal(deltas, currPos, brd_dim, FIND_LEGAL);
+		legal(deltas, p, brd_dim, FIND_LEGAL, realBoard);
 
 	}
 		  break;
 	case 3: {
 		deltas = { {-2, 1},{2,1},{ -1,2}, {1,2} ,{ -2, -1 }, { 2,-1 },{ -1,-2 },{1,-2 } };
-		legal(deltas, currPos, 1, FIND_LEGAL);
+		legal(deltas, p, 1, FIND_LEGAL, realBoard);
 		
 		break;
 	}
 	case 4: {
 		deltas = { { -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal(deltas, currPos, brd_dim, FIND_LEGAL);
+		legal(deltas, p, brd_dim, FIND_LEGAL, realBoard);
 		
 		break;
 	}
@@ -480,34 +498,34 @@ void Board::allPseudoLegal( Piece* p, bool realBoard)
 		if (p->GetColor()==1) { //white pawn
 			// manually adding legal moves to pawns bc its moves cant be described with legal() function
 			int numPos = currPos - brd_dim - 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() !=sideToMove) BoardState[currPos]->addMove(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() !=sideToMove)  board[currPos]->addMove(numPos);
 
 			numPos = currPos - brd_dim + 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) BoardState[currPos]->addMove(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) board[currPos]->addMove(numPos);
 
 			numPos = currPos - brd_dim;
 			if (numPos >= 0 && board[numPos] == NULL) {
 				BoardState[currPos]->addMove(numPos);
 				if (board[currPos]->IsUntouched()) {
 					numPos = currPos - 2 * brd_dim;
-					if (board[numPos] == NULL) BoardState[currPos]->addMove(numPos);
+					if (board[numPos] == NULL) board[currPos]->addMove(numPos);
 				}
 			}
 
 		} 
 		else if (p->GetColor() == 0) { // black pawn
 			int numPos = currPos + brd_dim - 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) BoardState[currPos]->addMove(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) board[currPos]->addMove(numPos);
 
 			numPos = currPos + brd_dim + 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) BoardState[currPos]->addMove(numPos);
+			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) board[currPos]->addMove(numPos);
 
 			numPos = currPos + brd_dim;
 			if (numPos >= 0 && board[numPos] == NULL) {
 				BoardState[currPos]->addMove(numPos);
 				if (board[currPos]->IsUntouched()) {
 					numPos = currPos + 2 * brd_dim;
-					if (board[numPos] == NULL) BoardState[currPos]->addMove(numPos);
+					if (board[numPos] == NULL) board[currPos]->addMove(numPos);
 				}
 			}
 		}

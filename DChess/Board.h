@@ -64,7 +64,7 @@ private:
 
 	char _fen[256];
 
-	void legal(std::vector<Pos>& deltas, int pos, int depth, int typeOfCheck);
+	void legal(std::vector<Pos>& deltas, Piece *, int depth, int typeOfCheck, bool);
 
 
 	Piece* holdPiece=NULL;
@@ -75,7 +75,8 @@ private:
 
 	SDL_Color bfield;
 	SDL_Color wfield;
-	std::vector<Piece*> pieces_; // contains ehm... uwu...  >w<
+	std::vector<Piece*> pieces_; 
+	std::vector<Piece*> tempPieces_;
 	Piece** BoardState=NULL;
 	Piece** tempBoard = NULL;// contains "references" to pieces, refers to NULL when cell is not occupied*/
 	Piece* bKing = NULL; Piece* wKing = NULL;
