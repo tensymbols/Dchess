@@ -356,6 +356,7 @@ void Board::legal(std::vector<Pos>& deltas, Piece* p, int depth, int typeOfcheck
 	//if (!israelboard) tempPieces_ = pieces_;
 	Pos coord = Board::getCoordFromNumber(pos);
 
+	
 	Pos delta;
 	for(size_t i=0; i<deltas.size();i++)
 	{
@@ -366,7 +367,7 @@ void Board::legal(std::vector<Pos>& deltas, Piece* p, int depth, int typeOfcheck
 			coord.y >= 0 && coord.y < brd_dim; i++)
 
 		{
-			int t_pos = coord.x * brd_dim + coord.y;
+			int t_pos = getNumberFromCoord(coord);
 			if (board[t_pos] == NULL) {
 				if(typeOfcheck == FIND_LEGAL) board[pos]->addMove(t_pos); // if square is empty we can go there
 				
@@ -395,7 +396,8 @@ void Board::potentialChecks(Piece* p) {
 								 { -1, -1 }, {  1, -1 }, { -1, 1 }, { 1,  1 } };
 
 	std::vector<Pos> deltas1 = { { -2,  1 }, { 2,  1 }, { -1, 2 }, { 1,  2 },// "knight" moves
-								 { -2, -1 }, { 2, -1 }, { -1,-2 }, { 1, -2 } }; // casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
+								 { -2, -1 }, { 2, -1 }, { -1,-2 }, { 1, -2 } };
+	// casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
 
 	legal(deltas0, p, brd_dim, FIND_CHECKS, REAL_BOARD);
 
@@ -414,7 +416,7 @@ void Board::processCheck(bool side)
 	Piece P_Temp = *KING;
 
 
-	memcpy(tempBoard, BoardState, sizeof(Piece)); // making a copy of current state of board to temporary board
+	memcpy(tempBoard, BoardState, sizeof(BoardState)); // making a copy of current state of board to temporary board
 
 
 	std::vector<int> inCheck ;
