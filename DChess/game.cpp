@@ -22,60 +22,64 @@ game::~game() {}
 void game::init(const char* title, const int xpos, const int ypos, const int width, const int height, bool fullscreen) {
 
 	int flags = 0;
+	int sqr_dim = 64;
+	int brd_dim = 10;
 
 	if (fullscreen) { flags = SDL_WINDOW_FULLSCREEN; }
 	if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
-	//	std::cout << "INITIALIZED succesfully" << std::endl;
+		//	std::cout << "INITIALIZED succesfully" << std::endl;
 		window = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
 
 		renderer = SDL_CreateRenderer(window, -1, 0);
 		if (renderer) {
-			
+
 
 		}
-		
+
 		gameObject::rnd = renderer;
 		graphics::renderer = renderer;
 		gameObject::gfx = gfx;
 
-		brd = new Board("textures/pieces0.png", {64,64 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, 10, 64);
-		_interface = new gInterface({64,16},NULL,*brd);
-		 //char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " }; // 8x8 standard
-		char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
+		TTF_Init();
 
+		brd = new Board("textures/pieces0.png", { 64,64 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, brd_dim, sqr_dim);
+		_interface = new gInterface({ 64,16 }, sqr_dim / 2, NULL, *brd);
+		// char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " }; // 8x8 standard
+		char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
+		//char fen[] = { "rkq/9/9/9/9/6/RQK " };
 		brd->Init(fen);
 		isRunning = true;
-		
+
 	}
 
-	
+
 }
 
 void game::handleEvents()
 {
 	SDL_Event event;
 	SDL_PollEvent(&event);
-	switch (event.type ) {
-		case SDL_QUIT:
-			isRunning = 0;
-			break;
-		case SDL_MOUSEMOTION:
-			brd->handleEvent(event);
-			_interface->handleEvent(event);
+	switch (event.type) {
+	case SDL_QUIT:
+		isRunning = 0;
+		break;
+	case SDL_MOUSEMOTION:
+		brd->handleEvent(event);
+		_interface->handleEvent(event);
 
-			break;
-		case SDL_MOUSEBUTTONDOWN:
-			_interface->handleEvent(event);
-			brd->handleEvent(event);
-			
-			
-			break;
-		case SDL_MOUSEBUTTONUP:
-			brd->handleEvent(event);
-			_interface->handleEvent(event);
-			break;
-		default:
-			break;
+		break;
+	case SDL_MOUSEBUTTONDOWN:
+		_interface->handleEvent(event);
+		brd->handleEvent(event);
+
+
+		break;
+	case SDL_MOUSEBUTTONUP:
+		brd->handleEvent(event);
+		_interface->handleEvent(event);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -92,7 +96,7 @@ void game::render()
 	_interface->Draw();
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderPresent(renderer);
-	
+
 
 }
 
@@ -103,7 +107,7 @@ void game::clean()
 
 
 	SDL_Quit();
-//	std::cout << "CLEANED" << std::endl;
+	//	std::cout << "CLEANED" << std::endl;
 }
 
 bool game::running()

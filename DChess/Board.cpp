@@ -1,22 +1,26 @@
 #include "Board.h"
 #include <iostream>
 #include <string>
-	
+
 #define FIND_CHECKS 0
 #define FIND_LEGAL 1
 #define REAL_BOARD 1
 #define TEMP_BOARD 0
 
-Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_dim ,int sqr_dim) :
-	gameObject(texfile,  pos_,sqr_dim*brd_dim,sqr_dim*brd_dim), bfield(bf), wfield(wf), sqr_dim(sqr_dim), brd_dim(brd_dim)
+Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_dim, int sqr_dim) :
+	gameObject(texfile, pos_, sqr_dim* brd_dim, sqr_dim* brd_dim), bfield(bf), wfield(wf), sqr_dim(sqr_dim), brd_dim(brd_dim)
 {
-	int b_size = brd_dim * brd_dim;
+	U = new util(pos_, sqr_dim, brd_dim);
+	b_size = brd_dim * brd_dim;
 	holdPiece = NULL;
-	BoardState = new Piece*[b_size];
-	tempBoard = new Piece * [b_size];
-	marked = new bool[b_size];
+
+	BoardState = new Piece * [b_size];
+
+
 	colSquares = new SDL_Color[b_size];
 	squares = new SDL_Rect[b_size];
+
+	marked = new bool[b_size];
 
 	for (size_t i = 0; i < b_size; i++) { // 
 		BoardState[i] = NULL;
@@ -33,21 +37,28 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 				colSquares[index] = bf;
 		}
 	}
-	fullClock = 0;
-	semiClock = 0;
-	sideToMove = 0;
+
+	///////////////
+
+	TTF_Font* numberFont = TTF_OpenFont("fonts\\arial.ttf", (int)sqr_dim * 0.6);
+	Pos shift = { (int)sqr_dim * 0.2,(int)sqr_dim * 0.2 }; // shift for text indexes
 	for (int i = 0; i < brd_dim; i++)
 	{
 		for (int j = 0; j < brd_dim; j++)
 		{
-			int index = getNumberFromCoord({j,i});
+			Pos abs = { this->getPos().x + j * sqr_dim,	this->getPos().y + i * sqr_dim };
+
+			int index = U->getNumberFromCoord({ j,i });
 			squares[index].w = sqr_dim,
-			squares[index].h = sqr_dim;
-			squares[index].x = this->getPos().x + j * sqr_dim;
-			squares[index].y = this->getPos().y + i * sqr_dim;
+				squares[index].h = sqr_dim;
+			squares[index].x = abs.x;
+			squares[index].y = abs.y;
+
+			numberText.push_back(new text(abs + shift, { 255,200,0,255 }, numberFont, std::to_string(index)));
+			numberText[index]->setTexAlpha(0);
 		}
 	}
-
+	///////////////
 }
 
 Board::~Board()
@@ -60,37 +71,46 @@ Board::~Board()
 void Board::Init() {
 	Init(_fen);
 }
-void Board::Init( char* fen)
+void Board::Init(char* fen)
 {
+	system("CLS");
+	//std::cout << "flushing " << std::flush;
 	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
 	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
-	
-	if(!initialized)strcpy(_fen, fen);
-	if (initialized) {
-		
-		unmarkLegal();
-		pieces_.clear();
-		temp_moves.clear();
-		holdPiece = NULL;
 
+	if (!initialized) {
+		strcpy(_fen, fen);
+	}
+	else {
 		for (size_t i = 0; i < pieces_.size(); i++)
 			delete pieces_[i];
+		/*for (size_t i = 0; i < tempPieces_.size(); i++)
+			delete tempPieces_[i];*/
+		unmarkLegal();
+		pieces_.clear();
 
-		delete[] BoardState; 
-		int b_size = brd_dim * brd_dim;
+
+
+		delete[] BoardState;
+		holdPiece, BoardState = NULL;
 
 		BoardState = new Piece * [b_size];
+
 		for (size_t i = 0; i < b_size; i++)
 			BoardState[i] = NULL;
-		
+
 	}
-	
+
 	// fen reading;
+	check = -1;
 	sideToMove = 0;
 	semiClock = 0;
 	fullClock = 0;
 	int pos = 0;
 	int k = 0;
+	//                  type color pos tex abspos     w        h         deltas           depth
+	tempPiece = new Piece(-1, -1, -1, "", { -1,-1 }, sqr_dim, sqr_dim, std::vector<Pos>(), -1);
+
 	while (fen[k] != ' ')
 	{
 		int ttype = -1; bool tcolor = 0;
@@ -102,74 +122,38 @@ void Board::Init( char* fen)
 			fen[k] > 97 && fen[k] < 123)
 		{
 
-			ttype = getTypeFromLetter(fen[k]);
+			ttype = U->getTypeFromLetter(fen[k]);
 			tcolor = (ttype < 6);
-		
-			std::string sNum = std::to_string(ttype+1);
-			std::string tempTexName ="textures\\pieces0_" ;
+
+			std::string sNum = std::to_string(ttype + 1);
+			std::string tempTexName = "textures\\pieces0_";
 			tempTexName += sNum;
 			tempTexName += ".png";
 
-		//	std::cout << AbsPosition.x << " " << AbsPosition.y << "\n";
-			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName.c_str(),getAbsPosition(pos),sqr_dim,sqr_dim));
+			Pos absPos = U->getAbsPosition(pos);
+			std::vector<Pos> deltas = U->deltasFromType(ttype);
+			int depth = U->depthFromType(ttype);
+			if (depth == -1) depth = brd_dim;
+			//	std::cout << AbsPosition.x << " " << AbsPosition.y << "\n";
+			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName.c_str(),
+				absPos, sqr_dim, sqr_dim, deltas, depth));
 
 			if (ttype == 1) wKing = pieces_[pieces_.size() - 1];
-			if (ttype == 7) bKing = pieces_[pieces_.size() - 1];
+			else if (ttype == 7) bKing = pieces_[pieces_.size() - 1];
 
 			BoardState[pos] = pieces_[pieces_.size() - 1];
-			
+
 
 			pos++;
 		}
 		k++;
 	}
-	std::cout << "INIT";
+
+	std::cout << "INIT\n";
 	initialized = true;
 	nextTurn();
 }
 
-int Board::getTypeFromLetter(const char c) {
-	int ttype = -1;
-	switch (c) {
-	case 'R':
-		ttype = 0;
-		break;
-	case 'N':
-		ttype = 3;
-		break;
-	case 'B':
-		ttype = 4;
-		break;
-	case 'Q':
-		ttype = 2;
-		break;
-	case 'K':
-		ttype = 1;
-		break;
-	case 'P':
-		ttype = 5;
-		break;
-	case 'r':
-		ttype = 6;
-		break;
-	case 'n':
-		ttype = 9;
-		break;
-	case 'b':
-		ttype = 10;
-		break;
-	case 'q':
-		ttype = 8;
-		break;
-	case 'k':
-		ttype = 7;
-		break;
-	case 'p':
-		ttype = 11;
-		break;
-	}
-	return ttype;
-}
 
 void Board::changeColor(SDL_Color w, SDL_Color b)
 {
@@ -177,36 +161,9 @@ void Board::changeColor(SDL_Color w, SDL_Color b)
 	bfield = b;
 }
 
-int Board::getPosFromMouse(Pos pos)
-{
-	Pos brdPos = this->getPos();
-	Pos AbsativePos;
-	AbsativePos.x = pos.x - brdPos.x;
-	AbsativePos.y = pos.y - brdPos.y;
-	int i = AbsativePos.x / sqr_dim;
-	int j = AbsativePos.y / sqr_dim;
-	int pos_ = j * brd_dim + i;
-	return pos_;
-}
 
 
-Pos Board::getCoordFromNumber(const int pos)
-{
-
-	int y = pos / brd_dim;
-	int x = pos-y*brd_dim;
-
-	Pos temp = {x,y };
-	return temp;
-}
-
-int Board::getNumberFromCoord(Pos pos)
-{
-
-	return (pos.y*brd_dim+pos.x);
-}
-
-void Board::keepInsde(Pos &pos)
+void Board::keepInsde(Pos& pos)
 {
 	Pos brdpos = this->getPos();
 	int x_right = brdpos.x + sqr_dim * brd_dim;
@@ -219,27 +176,24 @@ void Board::keepInsde(Pos &pos)
 	if (pos.y < y_up) pos.y = y_up;
 }
 
-void Board::handleEvent(SDL_Event &e)
+void Board::handleEvent(SDL_Event& e)
 {
 
 	switch (e.type) {
-	case SDL_MOUSEMOTION:  // when mouse is moving
-		
+	case SDL_MOUSEMOTION:
+
 		Pos mpos;
 		mpos.x = e.motion.x;
 		mpos.y = e.motion.y;
-		
+
 		if (isInside(mpos)) {
 			if (holdPiece != NULL) {
 
-				holdPiece->setPos({mpos.x-sqr_dim/2,mpos.y-sqr_dim/2}); // if there is a held piece it will drag it with mouse cursor
+				holdPiece->setPos({ mpos.x - sqr_dim / 2,mpos.y - sqr_dim / 2 }); // if there is a held piece it will drag it with mouse cursor
 			}
-
-			//unmark(prevMarked);
-			int pos_ = getPosFromMouse(mpos);
+			int pos_ = U->getPosFromMouse(mpos);
 
 			prevMarked = pos_;
-			//if (!marked[pos_]) mark(pos_);
 		}
 		else {
 
@@ -247,24 +201,25 @@ void Board::handleEvent(SDL_Event &e)
 				keepInsde(mpos);
 				holdPiece->setPos({ mpos.x - sqr_dim / 2,mpos.y - sqr_dim / 2 });
 			}
-		//	unmark(prevMarked);
+			//	unmark(prevMarked);
 		}
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		// when mouse button is pressed
-		if (e.button.button == SDL_BUTTON_LEFT) { 
-			
+		if (e.button.button == SDL_BUTTON_LEFT) {
+
 			if (LMB_STATE == 0) {
-				
+
 				LMB_STATE = true;
-			//	std::cout << LMB_STATE << "\n";
+
+				//	std::cout << LMB_STATE << "\n";
 				int x, y;
 				SDL_GetMouseState(&x, &y);
 				Pos mpos; mpos.x = x; mpos.y = y;
 				unmarkLegal();
 				if (isInside(mpos)) {
-					int pos_ = getPosFromMouse(mpos);
-					
+					int pos_ = U->getPosFromMouse(mpos);
+
 					if (BoardState[pos_] != NULL) {
 						// if mouse position is inside board and square where mouse is at is not empty holdpiece is initialized
 						if (BoardState[pos_]->GetColor() != sideToMove) {
@@ -275,7 +230,7 @@ void Board::handleEvent(SDL_Event &e)
 						}
 						else {
 							holdPiece = BoardState[pos_];
-	
+
 							temp_moves = holdPiece->getMoves();
 							drawLegal();
 						}
@@ -284,24 +239,40 @@ void Board::handleEvent(SDL_Event &e)
 			}
 
 		}
-		else if (e.button.button == SDL_BUTTON_RIGHT) { 
+		else if (e.button.button == SDL_BUTTON_RIGHT) {
+			if (RMB_STATE == 0 && LMB_STATE == 0) {
 
+				RMB_STATE = true;
+				int x, y;
+				unmarkLegal();
+				SDL_GetMouseState(&x, &y);
+				Pos mpos; mpos.x = x; mpos.y = y;
+				if (isInside(mpos))
+				{  // if mouse is inside board
+					int pos_ = U->getPosFromMouse(mpos);
+					if (BoardState[pos_] != NULL) {
+						BoardState[pos_] = NULL;
+						turn();
+					}
+				}
+
+			}
 		}
 		break;
 	case SDL_MOUSEBUTTONUP: // when mouse button is released
 		if (e.button.button == SDL_BUTTON_LEFT) {
-			if (LMB_STATE==1) {
+			if (LMB_STATE == 1) {
 				LMB_STATE = 0;
 				int x, y;
 
-			//	std::cout << LMB_STATE << "\n";
+				//	std::cout << LMB_STATE << "\n";
 				SDL_GetMouseState(&x, &y);
 				Pos mpos; mpos.x = x; mpos.y = y;
 
 
 				if (holdPiece != NULL) {
 					if (isInside(mpos)) {  // if mouse is inside board
-						int pos_ = getPosFromMouse(mpos);
+						int pos_ = U->getPosFromMouse(mpos);
 
 
 						if (holdPiece->isMoveA(pos_)) { // if move is legal
@@ -309,7 +280,7 @@ void Board::handleEvent(SDL_Event &e)
 							unmarkLegal();
 							nextTurn();
 
-							
+
 						}
 						else {
 							move(holdPiece->GetPos(), holdPiece->GetPos(), REAL_BOARD); // if not legal then move piece back
@@ -321,76 +292,184 @@ void Board::handleEvent(SDL_Event &e)
 						move(holdPiece->GetPos(), holdPiece->GetPos(), REAL_BOARD); // if mouse is outside the board bring held piece back
 
 					}
-					
+
 				}
-				
+
 				holdPiece = NULL;
 			}
 
 		}
 		else if (e.button.button == SDL_BUTTON_RIGHT) {
-
-		}		break;
+			if (RMB_STATE == 1) {
+				RMB_STATE = 0;
+			}
+		}
+		break;
+	}
+}
+void Board::clearMoves() {
+	for (size_t i = 0; i < b_size; i++)
+	{
+		if (BoardState[i] != NULL) BoardState[i]->clearMoves();
 	}
 }
 void Board::nextTurn()
 {
 	sideToMove = !sideToMove;
+	turn();
+	/*processCheck(sideToMove);*/
+}
+void Board::turn() {
 
-	for (size_t i = 0; i < pieces_.size(); i++)
+	clearMoves();
+
+
+	for (size_t i = 0; i < b_size; i++)
 	{
-		pieces_[i]->clearMoves();
-		allPseudoLegal(pieces_[i], REAL_BOARD);
+
+		if (BoardState[i] != NULL && sideToMove == BoardState[i]->GetColor())
+		{
+			allPseudoLegal(BoardState[i]);
+
+		}
+	}
+	if (sideToMove == true)
+		processCheck(wKing);
+	else
+		processCheck(bKing);
+
+}
+
+bool Board::getPiecesInReach(std::vector<Pos> deltas, Piece* p, int depth, bool colorToFind,
+	std::vector<std::pair<int, Pos >>& pieces, std::vector<int>* path) { // part of available moves (for all pieces except pawn)
+
+	int currPos = p->GetPos();
+
+	Piece** board = BoardState;
+
+
+	Pos coord = U->getCoordFromNumber(currPos); // from n to { x,y }
+
+	if (p->GetType() % 6 == 5) {
+
+		int sign = (p->GetColor()) ? -1 : 1;
+		// manually adding legal moves to pawns bc its moves cant be described with deltas
+		int numPos = currPos + (brd_dim - 1) * sign;
+		Pos currDelta = { 0, 1 * sign };
+		if (U->isPosLegal(numPos) && board[numPos] != NULL && board[numPos]->GetColor() == colorToFind) {
+
+			pieces.push_back(std::make_pair(numPos, currDelta));
+		}
+		else if (board[currPos]->IsUntouched() && board[numPos] == NULL) {
+			numPos = currPos + (2 * brd_dim * sign);
+			if (U->isPosLegal(numPos) && board[numPos] != NULL && board[numPos]->GetColor() == colorToFind) {
+				pieces.push_back(std::make_pair(numPos, currDelta));
+			}
+		}
 
 	}
-	processCheck(sideToMove);
+
+	Pos delta;
+
+	for (size_t i = 0; i < deltas.size(); i++)
+	{
+		//path.clear();
+		delta = deltas[i];
+		coord += delta;
+
+		for (size_t currDepth = 0; currDepth < depth && coord.x >= 0 && coord.x < brd_dim
+			&& coord.y >= 0 && coord.y < brd_dim; currDepth++)
+
+		{
+			int t_pos = U->getNumberFromCoord(coord); // from { x, y } to n
+
+			if (board[t_pos] != NULL) {
+				if (board[t_pos]->GetColor() == colorToFind) {
+					pieces.push_back(std::make_pair(t_pos, delta));
+				}
+				break;
+			}
+			if (path) path->push_back(t_pos);
+			coord += delta;
+		}
+
+		coord = U->getCoordFromNumber(currPos);
+	}
+
+
+	return false;
+
 }
 
 
-void Board::legal(std::vector<Pos>& deltas, Piece* p, int depth, int typeOfcheck, bool israelboard) { // part of available moves (for all pieces except pawn)
+bool Board::findAttackers(std::vector<Pos> deltas, int attackedPos, int depth, bool colorToFind,
+	std::vector<int>& attackers, std::vector<int>& path, Piece* ignore) { // part of available moves (for all pieces except pawn)
 
-	int pos = p->GetPos();
-	
-	Piece** board = (israelboard) ? BoardState : tempBoard;
+	int currPos = attackedPos;
 
-	//if (!israelboard) tempPieces_ = pieces_;
-	Pos coord = Board::getCoordFromNumber(pos);
+	std::vector<int> tempPath;
 
-	
+	Piece** board = BoardState;
+
+
+	Pos coord = U->getCoordFromNumber(currPos); // from n to { x,y }
+
 	Pos delta;
-	for(size_t i=0; i<deltas.size();i++)
-	{
-		delta=deltas[i];
-		coord += delta;
 
-		for (size_t i = 0; i < depth && coord.x >= 0 && coord.x < brd_dim &&
-			coord.y >= 0 && coord.y < brd_dim; i++)
+	for (size_t i = 0; i < deltas.size(); i++)
+	{
+
+		delta = deltas[i];
+		coord += delta;
+		tempPath.clear();
+		for (size_t currDepth = 0; currDepth < depth && coord.x >= 0 && coord.x < brd_dim
+			&& coord.y >= 0 && coord.y < brd_dim; currDepth++)
 
 		{
-			int t_pos = getNumberFromCoord(coord);
-			if (board[t_pos] == NULL) {
-				if(typeOfcheck == FIND_LEGAL) board[pos]->addMove(t_pos); // if square is empty we can go there
-				
+
+			int t_pos = U->getNumberFromCoord(coord); // from { x, y } to n
+
+			if (board[t_pos] != NULL) {
+				if (board[t_pos]->GetColor() == colorToFind
+					&& board[t_pos]->hasDelta(delta.opposite())
+					&& board[t_pos]->getDepth() >= (currDepth + 1))
+				{
+					attackers.push_back(t_pos);
+					tempPath.push_back(t_pos);
+					path.insert(path.end(), tempPath.begin(), tempPath.end());
+				}
+
+				if (board[t_pos] != ignore) 	break;
+
 			}
 			else {
-				if (board[t_pos]->GetColor() != board[pos]->GetColor()) {
-					p->addMove(t_pos); // if we bump into piece of opposite color this is our last square we can go to in this direction
-					if(typeOfcheck==FIND_CHECKS) std::cout <<"Potential check " << t_pos << "\n";
-				}
-		
-				break;
+				tempPath.push_back(t_pos);
 			}
 
 			coord += delta;
 		}
-		coord = Board::getCoordFromNumber(pos);
-	}
-}
-void Board::potentialChecks(Piece* p) { 
 
-	int kingPos = p->GetPos();
-	std::cout << "KINGPOS " << kingPos<<"\n";
-	std::vector<int> pChecks;
+		coord = U->getCoordFromNumber(currPos);
+	}
+
+
+	return false;
+
+}
+
+void Board::processCheck(Piece* p) {
+
+	bool this_side = p->GetColor();
+	bool opposite_side = !this_side;
+	Piece** board = BoardState;
+	int kingFound = 0;
+	int piecePos = p->GetPos();
+	std::cout << "\nW KINGPOS " << wKing->GetPos() << "\n";
+	std::cout << "B KINGPOS " << bKing->GetPos() << "\n";
+
+	std::vector<int> piece_attackers;
+
+	std::vector<int> path;
 
 	std::vector<Pos> deltas0 = { {  1,  0 }, { -1,  0 }, {  0, 1 }, { 0, -1 } , // "queen" moves
 								 { -1, -1 }, {  1, -1 }, { -1, 1 }, { 1,  1 } };
@@ -399,162 +478,183 @@ void Board::potentialChecks(Piece* p) {
 								 { -2, -1 }, { 2, -1 }, { -1,-2 }, { 1, -2 } };
 	// casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
 
-	legal(deltas0, p, brd_dim, FIND_CHECKS, REAL_BOARD);
+	findAttackers(deltas0, piecePos, brd_dim, opposite_side, piece_attackers, path); // depth -1 = infinity
 
-	legal(deltas1, p, 1, FIND_CHECKS, REAL_BOARD);
+	findAttackers(deltas1, piecePos, 1, opposite_side, piece_attackers, path);
+	/// Correcting King(or potentially other piece) moves so that it wont be able to march into check
+	std::vector<int> temp_moves = p->getMoves();
+	std::vector<int> legit_moves;
+	p->clearMoves();
 
-
-} //auxiliary function 
-
-void Board::processCheck(bool side)
-{
-
-
-	Piece* KING = (side) ? wKing :  bKing;
-	int kingPos = KING->GetPos();
-
-	Piece P_Temp = *KING;
-
-
-	memcpy(tempBoard, BoardState, sizeof(BoardState)); // making a copy of current state of board to temporary board
-
-
-	std::vector<int> inCheck ;
-	potentialChecks(&P_Temp);
-	std::vector<int> pChecks = P_Temp.getMoves();
-
-
-	std::vector<int> t_pseudo;
-
-	std::cout << "size " << pChecks.size() << "\n\n\n";
-/*	for (size_t i = 0; i < pChecks.size(); i++)
+	std::vector<int> field_attackers;
+	std::vector<int> temp_path;
+	for (size_t i = 0; i < temp_moves.size(); i++) // adding temp move to available moves if square is not attacked
 	{
+		int curr = temp_moves[i];
 
-		int ix = pChecks[i];
-		std::cout <<"INDEX " << ix << "\n\n\n";
- 		t_pseudo = BoardState[ix]->getMoves();
-		for (size_t j = 0; j < t_pseudo.size(); j++)
-		{
-			if (t_pseudo[j] == kingPos) {
-				inCheck.push_back(pChecks[i]);
-				std::cout << "\n" << pChecks[i] << "\n";
+
+		findAttackers(deltas0, curr, brd_dim, !sideToMove, field_attackers, temp_path, p); // finding attackers of current field (ignoring our king piece)
+		findAttackers(deltas1, curr, 1, !sideToMove, field_attackers, temp_path, p);
+
+		if (field_attackers.size() == 0) {
+			legit_moves.push_back(temp_moves[i]);
+		}
+		else {
+			std::cout << "pos:" << curr << " attackers number: " << field_attackers.size() << "\n";
+			std::cout << "attackers list: ";
+			U->displayIntVector(field_attackers);
+			std::cout << "\n";
+		}
+		field_attackers.clear();
+
+	}
+	p->addMoves(legit_moves);
+	if (piece_attackers.size() > 0) {
+		// attackers own position should be included in the path
+
+		if (piece_attackers.size() > 1) {
+			clearMoves(); // clear ALL moves because if there are >1 attackers other pieces wont be able to cover
+			p->addMoves(legit_moves);; // giving our piece(king) moves back;
+
+			std::cout << "MULTIPLE CHECK FROM: ";
+			U->displayIntVector(piece_attackers);
+			std::cout << "\n";
+			std::cout << "PATH: ";
+			U->displayIntVector(path);
+
+		}
+
+
+
+		if (piece_attackers.size() == 1) {
+
+			std::cout << "SINGLE CHECK FROM: " << piece_attackers[0] << "\n";
+			std::cout << "PATH: ";
+			U->displayIntVector(path);
+
+			std::vector<int> p_intersection;
+
+			for (size_t i = 0; i < b_size; i++)
+			{
+				if (U->sameSide(board[i], p) && board[i] != p) {
+					Piece* ally = board[i];
+
+					temp_moves = ally->getMoves();
+					p_intersection = U->getIntersection(temp_moves, path);
+					ally->clearMoves();
+					ally->addMoves(p_intersection);
+				}
 			}
 
 		}
-		//BoardState[ix]->clearMoves();
 
-	}*/
+	}
 
-	(side) ? w_check = inCheck : b_check = inCheck;
 
+	std::vector<int> ghost_attackers;
+	std::vector<int> ghost_path;
+
+	std::vector<std::pair<int, Pos> > nearby_allies;
+
+	getPiecesInReach(deltas0, p, brd_dim, this_side, nearby_allies);
+
+	std::vector<int> p_intersection;
+
+	for (size_t i = 0; i < nearby_allies.size(); i++)
+	{
+		Piece* ally = board[nearby_allies[i].first];
+		std::vector<Pos> deltas = { nearby_allies[i].second };
+
+		findAttackers(deltas, piecePos, brd_dim, opposite_side, ghost_attackers, ghost_path, ally);
+
+
+		if (!ghost_attackers.empty()) {
+			int last_ix = ghost_attackers.size() - 1;
+			int attacker_pos = ghost_attackers[last_ix];
+
+			temp_moves = ally->getMoves();
+
+			p_intersection = U->getIntersection(temp_moves, ghost_path);
+
+			ally->clearMoves();
+			ally->addMoves(p_intersection);
+		}
+		ghost_attackers.clear();
+		ghost_path.clear();
+	}
 }
-void Board::allPseudoLegal( Piece* p, bool realBoard)
-{
-	Piece** board = (realBoard) ? BoardState : tempBoard;
-	std::vector<Piece*>& pieces = (realBoard) ? pieces_ : tempPieces_;
 
-	int ttype = p->GetType();
-	ttype %= 6;
-	int currPos = p->GetPos();
+
+void Board::allPseudoLegal(Piece* p) { // part of available moves (for all pieces except pawn)
+
 	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
 	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
-	std::vector<int> moves;
+	std::vector<Pos> deltas = p->getDeltas();
+	int depth = p->getDepth();
+	int currPos = p->GetPos();
 
+	Piece** board = BoardState;
 
+	//if (!israelboard) tempPieces_ = pieces_;
+	Pos coord = U->getCoordFromNumber(currPos); // from n to { x,y }
 
-	std::vector<int> legal_temp;
-	std::vector<Pos> deltas;
-	switch (ttype) {
-	case 0: {
-		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} };
-		legal(deltas, p, brd_dim, FIND_LEGAL, realBoard);
-
-
-	}
-		  break;
-	case 1: {
-		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal(deltas, p, 1, FIND_LEGAL, realBoard);
-
-	}
-		  break;
-	case 2: {
-		deltas = { {1, 0},{-1,0},{ 0,1}, {0,-1} ,{ -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal(deltas, p, brd_dim, FIND_LEGAL, realBoard);
-
-	}
-		  break;
-	case 3: {
-		deltas = { {-2, 1},{2,1},{ -1,2}, {1,2} ,{ -2, -1 }, { 2,-1 },{ -1,-2 },{1,-2 } };
-		legal(deltas, p, 1, FIND_LEGAL, realBoard);
-		
-		break;
-	}
-	case 4: {
-		deltas = { { -1, -1 }, { 1,-1 },{ -1,1 },{ 1,1 } };
-		legal(deltas, p, brd_dim, FIND_LEGAL, realBoard);
-		
-		break;
-	}
-	case 5: {
-		if (p->GetColor()==1) { //white pawn
-			// manually adding legal moves to pawns bc its moves cant be described with legal() function
-			int numPos = currPos - brd_dim - 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() !=sideToMove)  board[currPos]->addMove(numPos);
-
-			numPos = currPos - brd_dim + 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) board[currPos]->addMove(numPos);
-
-			numPos = currPos - brd_dim;
-			if (numPos >= 0 && board[numPos] == NULL) {
-				BoardState[currPos]->addMove(numPos);
-				if (board[currPos]->IsUntouched()) {
-					numPos = currPos - 2 * brd_dim;
-					if (board[numPos] == NULL) board[currPos]->addMove(numPos);
-				}
-			}
-
-		} 
-		else if (p->GetColor() == 0) { // black pawn
-			int numPos = currPos + brd_dim - 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) board[currPos]->addMove(numPos);
-
-			numPos = currPos + brd_dim + 1;
-			if (board[numPos] != NULL && board[numPos]->GetColor() != sideToMove) board[currPos]->addMove(numPos);
-
-			numPos = currPos + brd_dim;
-			if (numPos >= 0 && board[numPos] == NULL) {
-				BoardState[currPos]->addMove(numPos);
-				if (board[currPos]->IsUntouched()) {
-					numPos = currPos + 2 * brd_dim;
-					if (board[numPos] == NULL) board[currPos]->addMove(numPos);
-				}
+	if (p->GetType() % 6 == 5) {
+		int sign = (p->GetColor()) ? -1 : 1;
+		// manually adding legal moves to pawns bc its moves cant be described with deltas
+		int numPos = currPos + (brd_dim)*sign;
+		if (U->isPosLegal(numPos) && board[numPos] == NULL) {
+			BoardState[currPos]->addMove(numPos);
+			if (board[currPos]->IsUntouched()) {
+				numPos = currPos + (2 * brd_dim * sign);
+				if (U->isPosLegal(numPos) && board[numPos] == NULL) board[currPos]->addMove(numPos);
 			}
 		}
-		break;
+
+	}
+	Pos delta;
+	if (depth == -1) depth = brd_dim;
+	for (size_t i = 0; i < deltas.size(); i++)
+	{
+		delta = deltas[i];
+		coord += delta;
+
+		for (size_t currDepth = 0; currDepth < depth &&
+			coord.x >= 0 && coord.x < brd_dim &&
+			coord.y >= 0 && coord.y < brd_dim;
+			currDepth++)
+
+		{
+			int t_pos = U->getNumberFromCoord(coord); // from { x, y } to n
+			if (board[t_pos] == NULL) {
+				if (p->GetType() % 6 != 5) board[currPos]->addMove(t_pos); // if square is empty we can go there
+
+			}
+			else {
+				if (board[t_pos]->GetColor() != board[currPos]->GetColor()) {
+					p->addMove(t_pos); // if we bump into piece of opposite color this is our last square in this direction that we can go to
+				}
+
+				break;
+			}
+
+			coord += delta;
 		}
+		coord = U->getCoordFromNumber(currPos);
 	}
 
-}
 
-Pos Board::getAbsPosition(int pos)
-{
-	Pos position = getCoordFromNumber(pos);
-	Pos AbsPosition = { position.x * sqr_dim + this->getPos().x, position.y * sqr_dim + this->getPos().y };
-	return AbsPosition;
 }
-
 
 void Board::move(int pos1, int pos2, bool realBoard)
 {
-	Piece** board = (realBoard) ? BoardState : tempBoard;
+	Piece** board = BoardState;
 	try {
 		if (pos1 == pos2) {
-			board[pos1]->setPos(getAbsPosition(pos2));
+			board[pos1]->setPos(U->getAbsPosition(pos2));
 		}
 		else {
 			//	std::cout << BoardState[pos1_] << " " << BoardState[pos2_];
-			if (board[pos1]==NULL) {
+			if (board[pos1] == NULL) {
 				std::cout << ("Illegal move\n");
 			}
 			else {
@@ -565,16 +665,17 @@ void Board::move(int pos1, int pos2, bool realBoard)
 
 				board[pos2] = board[pos1];
 
-				board[pos1]->setPos(getAbsPosition(pos2));
+				board[pos1]->setPos(U->getAbsPosition(pos2));
 				board[pos1]->Touch();
 
 				board[pos1] = NULL;
-				
+
+				check = -1;
 
 			}
 		}
 	}
-	
+
 	catch (...) {
 		throw;
 	}
@@ -583,21 +684,57 @@ void Board::move(int pos1, int pos2, bool realBoard)
 void Board::mark(const int index)
 {
 	SDL_Color temp;
-	temp.r = (colSquares[index].r + 255)/2;
-	temp.g = colSquares[index].g/2;
-	temp.b = colSquares[index].b/2; temp.a = 255;
+	temp.r = (colSquares[index].r + 255) / 2;
+	temp.g = colSquares[index].g / 2;
+	temp.b = colSquares[index].b / 2; temp.a = 255;
 	colSquares[index] = temp;
 	marked[index] = 1;
 }
 void Board::unmark(const int index)
 {
 
-	Pos temp=getCoordFromNumber(index);
+	Pos temp = U->getCoordFromNumber(index);
 	if ((temp.x + temp.y) % 2)
 		colSquares[index] = wfield;
 	else
 		colSquares[index] = bfield;
 	marked[index] = 0;
+}
+
+void Board::toggleNumbers()
+{
+	if (showNumbers == true) {
+		for (size_t i = 0; i < numberText.size(); i++)
+		{
+			numberText[i]->setTexAlpha(0);
+		}
+		showNumbers = false;
+	}
+	else {
+		for (size_t i = 0; i < numberText.size(); i++)
+		{
+			numberText[i]->setTexAlpha(255);
+		}
+		showNumbers = true;
+	}
+}
+
+void Board::togglePiecesAlpha()
+{
+	if (alphaPieces == true) {
+		for (size_t i = 0; i < pieces_.size(); i++)
+		{
+			pieces_[i]->setTexAlpha(70);
+		}
+		alphaPieces = false;
+	}
+	else {
+		for (size_t i = 0; i < pieces_.size(); i++)
+		{
+			pieces_[i]->setTexAlpha(255);
+		}
+		alphaPieces = true;
+	}
 }
 
 void Board::Draw() {
@@ -608,16 +745,16 @@ void Board::Draw() {
 		{
 			int index = j + i * brd_dim;
 
-			
+
 			gameObject::gfx->DrawRect(colSquares[index], squares[index]);
-		
+			numberText[index]->Draw();
 		}
 	}
-	
+
 	int i_max = brd_dim * brd_dim;
 	for (int i = 0; i < i_max; i++)
 	{
-		if(BoardState[i]!=NULL && BoardState[i]!=holdPiece) BoardState[i]->Draw();
+		if (BoardState[i] != NULL && BoardState[i] != holdPiece) BoardState[i]->Draw();
 	}
 	if (holdPiece != NULL)holdPiece->Draw();
 

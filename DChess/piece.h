@@ -5,7 +5,7 @@
 class Piece :public gameObject {
 public:
 	Piece(int, bool, int, const char*, Pos);
-	Piece(int type, bool color, int pos, const char* texname, Pos pos_, int w, int h);
+	Piece(int type, bool color, int pos, const char* texname, Pos pos_, int w, int h, std::vector<Pos> deltas, int depth);
 	~Piece();
 
 	// 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn
@@ -14,11 +14,17 @@ public:
 	void Touch() { touch++; }
 
 	void addMove(int pos); // add move to available moves
-	bool isMoveA(int pos); // is move available
-	std::vector<int> getMoves();
-	void clearMoves();
+	void addMoves(std::vector<int> moves);
 
-//	void Draw() override;
+	bool isMoveA(int pos); // is move available
+	bool hasDelta(Pos delta);
+	std::vector<int> getMoves();
+	std::vector<Pos> getDeltas();
+	int getDepth();
+	void clearMoves();
+	//void copy(Piece*);
+	void clear();
+	//	void Draw() override;
 	int GetPos() { return pos; }
 	bool GetColor() { return color; }
 	bool IsUntouched() { return (touch == 0); }
@@ -26,10 +32,14 @@ public:
 	//bool moveLegal(int pos);
 
 private:
-	
+
 	int type;
 	int pos;
-	std::vector<int> aMoves;
+	std::vector<int> moves_;
+
+	std::vector<Pos> deltas;
+	int depth = 0;
+
 	int touch = 0;
 	bool color;
 };
