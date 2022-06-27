@@ -12,6 +12,12 @@ public:
 	void Move(const int);
 	void InitPiece(int, bool, int);
 	void Touch() { touch++; }
+
+	void addMove(int pos); // add move to available moves
+	bool isMoveA(int pos); // is move available
+	std::vector<int> getMoves();
+	void clearMoves();
+
 //	void Draw() override;
 	int GetPos() { return pos; }
 	bool GetColor() { return color; }
@@ -23,7 +29,7 @@ private:
 	
 	int type;
 	int pos;
-	
+	std::vector<int> aMoves;
 	int touch = 0;
 	bool color;
 };

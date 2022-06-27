@@ -6,6 +6,7 @@ struct Pos {
 	Pos operator + (Pos const& obj);
 	Pos operator - (Pos const& obj);
 	Pos operator +=(Pos const& obj);
+	Pos operator -=(Pos const& obj);
 	bool operator ==(Pos const& obj);
 	Pos operator = (Pos const& obj);
 	Pos operator * (int );
@@ -27,6 +28,12 @@ inline Pos Pos::operator +=(Pos const& obj) {
 	Pos temp = *this + obj;
 	return temp;
 }
+
+inline Pos Pos::operator -=(Pos const& obj) {
+	Pos temp = *this - obj;
+	return temp;
+}
+
 inline Pos Pos::operator = (Pos const& obj) {
 	this->x = obj.x;
 	this->y = obj.y;

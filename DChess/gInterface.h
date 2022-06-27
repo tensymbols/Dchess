@@ -22,11 +22,15 @@ public:
 	private:
 		bool marked=0;
 		int type;
+
 	};
 	void handleEvent(SDL_Event &e);
 	void Draw() override;
 private:
 	std::vector<iButton*> buttons;
 	Board& brd;
+	bool RMB_STATE = false;
 	bool LMB_STATE = false;
+
+	bool drag_ = false;
 };
