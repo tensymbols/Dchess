@@ -2,6 +2,7 @@
 #include "SDL.h"
 #include "pos.h"
 #include "SDL_image.h"
+#include "SDL_ttf.h"
 class graphics {
 public:
 

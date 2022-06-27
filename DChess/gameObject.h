@@ -5,8 +5,12 @@
 class gameObject {
 
 public:
-	gameObject(const char* , Pos, int w,int h);
+	gameObject(const char*, Pos, int w, int h);
 	gameObject(const char*, Pos);
+	void setTexture(SDL_Texture* tex);
+	void setTexAlpha(int a);
+	void setWidth(int);
+	void setHeight(int);
 	virtual void Move(Pos);
 	virtual void update();
 	virtual void Draw();
@@ -18,12 +22,12 @@ public:
 	int getH() const;
 	bool isInside(Pos);
 	static SDL_Renderer* rnd;
-	static graphics *gfx;
-private:
+	static graphics* gfx;
+protected:
 
 	SDL_Texture* texture_ = NULL;
-	
+
 	Pos pos_;
-	int width;
-	int height;
-};
+	int width_;
+	int height_;
+};/// remove gets and sets that could be implemented with protected
