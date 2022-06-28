@@ -6,7 +6,7 @@ class Piece :public gameObject {
 public:
 	Piece(int, bool, int, const char*, Pos);
 	Piece(int type, bool color, int pos, const char* texname, Pos pos_, int w, int h, std::vector<Pos> deltas, int depth);
-	~Piece();
+
 
 	// 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn
 	void Move(const int);

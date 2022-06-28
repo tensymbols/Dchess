@@ -12,9 +12,7 @@ Piece::Piece(int type, bool color, int pos, const char* texname,
 {
 }
 
-Piece::~Piece() {
-	//delete this;
-}
+
 
 /*void Piece::Draw() {
 

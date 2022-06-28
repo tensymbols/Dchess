@@ -7,6 +7,7 @@ class gameObject {
 public:
 	gameObject(const char*, Pos, int w, int h);
 	gameObject(const char*, Pos);
+	~gameObject();
 	void setTexture(SDL_Texture* tex);
 	void setTexAlpha(int a);
 	void setWidth(int);

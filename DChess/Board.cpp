@@ -28,7 +28,7 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 	b_size = brd_dim * brd_dim;
 	holdPiece = NULL;
 
-	BoardState = new Piece * [b_size];
+	BoardState = (Piece**)malloc( sizeof( Piece) * b_size);
 
 
 	colSquares = new SDL_Color[b_size];
@@ -105,10 +105,10 @@ void Board::Init(char* fen)
 
 
 
-		//delete[] BoardState;
+		delete[] BoardState;
 		holdPiece, BoardState = NULL;
 
-		BoardState = new Piece * [b_size];
+		BoardState = (Piece**)malloc(sizeof(Piece) * b_size);
 
 		for (size_t i = 0; i < b_size; i++)
 			BoardState[i] = NULL;
@@ -124,6 +124,7 @@ void Board::Init(char* fen)
 	int k = 0;
 
 
+	
 	while (fen[k] != ' ')
 	{
 		int ttype = -1; bool tcolor = 0;
@@ -148,13 +149,16 @@ void Board::Init(char* fen)
 			int depth = U->depthFromType(ttype);
 			if (depth == -1) depth = brd_dim;
 			//	std::cout << AbsPosition.x << " " << AbsPosition.y << "\n";
-			pieces_.push_back(new Piece(ttype, tcolor, pos, tempTexName.c_str(),
-				absPos, sqr_dim, sqr_dim, deltas, depth));
+			BoardState[pos] = new Piece(ttype, tcolor, pos, tempTexName.c_str(),
+				absPos, sqr_dim, sqr_dim, deltas, depth);
+
+			pieces_.push_back(BoardState[pos]);
+		
 
 			if (ttype == 1) wKing = pieces_[pieces_.size() - 1];
 			else if (ttype == 7) bKing = pieces_[pieces_.size() - 1];
 
-			BoardState[pos] = pieces_[pieces_.size() - 1];
+			
 
 
 			pos++;

@@ -10,6 +10,12 @@ gameObject::gameObject(const char* texfile, Pos pos) : pos_(pos)
 	width_ = 0; height_ = 0;
 	if (texfile) texture_ = texLoader::loadTexture(texfile, rnd);
 }
+gameObject::~gameObject()
+{
+	if (texture_) { 
+		SDL_DestroyTexture(texture_);
+	}
+}
 void gameObject::setWidth(int w)
 {
 	width_ = w;
