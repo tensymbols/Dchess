@@ -3,9 +3,23 @@
 #include <string>
 
 #define FIND_CHECKS 0
-#define FIND_LEGAL 1
-#define REAL_BOARD 1
-#define TEMP_BOARD 0
+#define FIND_LEGAL  1
+#define REAL_BOARD  1
+#define TEMP_BOARD  0
+// 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
+
+#define WHITE_ROOK	  0
+#define WHITE_KING	  1
+#define WHITE_QUEEN	  2
+#define WHITE_KNIGHT  3
+#define WHITE_BISHOP  4 
+#define WHITE_PAWN	  5
+#define BLACK_ROOK	  6
+#define BLACK_KING	  7
+#define BLACK_QUEEN	  8
+#define BLACK_KNIGHT  9
+#define BLACK_BISHOP  10 
+#define BLACK_PAWN	  11
 
 Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_dim, int sqr_dim) :
 	gameObject(texfile, pos_, sqr_dim* brd_dim, sqr_dim* brd_dim), bfield(bf), wfield(wf), sqr_dim(sqr_dim), brd_dim(brd_dim)
@@ -26,9 +40,9 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 		BoardState[i] = NULL;
 		marked[i] = 0;
 	}
-	for (int i = 0; i < brd_dim; i++) // squares color init
+	for (size_t i = 0; i < brd_dim; i++) // squares color init
 	{
-		for (int j = 0; j < brd_dim; j++)
+		for (size_t j = 0; j < brd_dim; j++)
 		{
 			int index = j + i * brd_dim;
 			if ((i + j) % 2)
@@ -91,7 +105,7 @@ void Board::Init(char* fen)
 
 
 
-		delete[] BoardState;
+		//delete[] BoardState;
 		holdPiece, BoardState = NULL;
 
 		BoardState = new Piece * [b_size];
@@ -108,8 +122,7 @@ void Board::Init(char* fen)
 	fullClock = 0;
 	int pos = 0;
 	int k = 0;
-	//                  type color pos tex abspos     w        h         deltas           depth
-	tempPiece = new Piece(-1, -1, -1, "", { -1,-1 }, sqr_dim, sqr_dim, std::vector<Pos>(), -1);
+
 
 	while (fen[k] != ' ')
 	{
@@ -313,6 +326,15 @@ void Board::clearMoves() {
 		if (BoardState[i] != NULL) BoardState[i]->clearMoves();
 	}
 }
+void Board::clearMoves(std::vector<Piece*> exceptions) {
+	for (size_t i = 0; i < b_size; i++)
+	{
+		if (BoardState[i] != NULL) {
+			std::vector<Piece*>::iterator it = std::find(exceptions.begin(), exceptions.end(), BoardState[i]);
+			if(it==exceptions.end()) BoardState[i]->clearMoves();
+		}
+	}
+}
 void Board::nextTurn()
 {
 	sideToMove = !sideToMove;
@@ -334,11 +356,180 @@ void Board::turn() {
 		}
 	}
 	if (sideToMove == true)
-		processCheck(wKing);
+		getAllLegal(wKing);
 	else
-		processCheck(bKing);
+		getAllLegal(bKing);
 
 }
+
+void Board::allPseudoLegal(Piece* p) { // part of available moves (for all pieces except pawn)
+
+	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
+	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
+	std::vector<Pos> deltas = p->getDeltas();
+	int depth = p->getDepth();
+	int currPos = p->GetPos();
+
+	Piece** board = BoardState;
+
+	//if (!israelboard) tempPieces_ = pieces_;
+	Pos coord = U->getCoordFromNumber(currPos); // from n to { x,y }
+
+	if (p->GetType() % 6 == 5) {
+		int sign = (p->GetColor()) ? -1 : 1;
+		// manually adding legal moves to pawns bc its moves cant be described with deltas
+		int numPos = currPos + (brd_dim)*sign;
+		if (U->isPosLegal(numPos) && board[numPos] == NULL) {
+			BoardState[currPos]->addMove(numPos);
+			if (board[currPos]->IsUntouched()) {
+				numPos = currPos + (2 * brd_dim * sign);
+				if (U->isPosLegal(numPos) && board[numPos] == NULL) board[currPos]->addMove(numPos);
+			}
+		}
+
+	}
+	Pos delta;
+	if (depth == -1) depth = brd_dim;
+	for (size_t i = 0; i < deltas.size(); i++)
+	{
+		delta = deltas[i];
+		coord += delta;
+
+		for (size_t currDepth = 0; currDepth < depth &&
+			coord.x >= 0 && coord.x < brd_dim &&
+			coord.y >= 0 && coord.y < brd_dim;
+			currDepth++)
+
+		{
+			int t_pos = U->getNumberFromCoord(coord); // from { x, y } to n
+			if (board[t_pos] == NULL) {
+				if (p->GetType() % 6 != 5) board[currPos]->addMove(t_pos); // if square is empty we can go there
+
+			}
+			else {
+				if (board[t_pos]->GetColor() != board[currPos]->GetColor()) {
+					p->addMove(t_pos); // if we bump into piece of opposite color this is our last square in this direction that we can go to
+				}
+
+				break;
+			}
+
+			coord += delta;
+		}
+		coord = U->getCoordFromNumber(currPos);
+	}
+
+
+}
+
+/////////////////////////////////////////////////////////////// check block 
+
+void Board::getAllLegal(Piece* p) {
+
+
+	std::cout << "\nW KINGPOS " << wKing->GetPos() << "\n";
+	std::cout << "B KINGPOS " << bKing->GetPos() << "\n";
+
+
+
+	// casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
+
+	/// Correcting King(or potentially other piece) moves so that it wont be able to march into check
+
+	std::vector<int> legit_moves = safeFieldsAround(p);
+
+	p->addMoves(legit_moves);
+
+
+	processCheck(p);
+
+	processTiedPieces(p);
+
+
+}
+
+std::vector<int> Board::safeFieldsAround(Piece* p)
+{
+	std::vector<int> temp_moves = p->getMoves();
+	std::vector<int> legit_moves;
+	p->clearMoves();
+
+	std::vector<int> field_attackers;
+	std::vector<int> temp_path;
+	for (size_t i = 0; i < temp_moves.size(); i++) // adding temp move to available moves if square is not attacked
+	{
+		int curr = temp_moves[i];
+
+		findAttackers(U->deltasFromType(WHITE_QUEEN), curr, brd_dim, !sideToMove, field_attackers, temp_path, p); // finding attackers of current field (ignoring our king piece)
+		findAttackers(U->deltasFromType(WHITE_KNIGHT), curr, 1, !sideToMove, field_attackers, temp_path, p);
+
+		if (field_attackers.size() == 0) {
+			legit_moves.push_back(temp_moves[i]);
+		}
+		else {
+			std::cout << "pos:" << curr << " attackers number: " << field_attackers.size() << "\n";
+			std::cout << "attackers list: ";
+			U->displayIntVector(field_attackers);
+			std::cout << "\n";
+		}
+		field_attackers.clear();
+
+	}
+	return legit_moves;
+}
+
+void Board::processCheck(Piece* p)
+{
+	bool this_side = p->GetColor();
+	bool opposite_side = !this_side;
+	Piece** board = BoardState;
+	int kingFound = 0;
+	int piecePos = p->GetPos();
+
+	std::vector<int> piece_attackers;
+
+	std::vector<int> path;
+
+	findAttackers(U->deltasFromType(WHITE_QUEEN), piecePos, brd_dim, opposite_side, piece_attackers, path); // depth -1 = infinity, queen deltas
+
+	findAttackers(U->deltasFromType(WHITE_KNIGHT), piecePos, 1, opposite_side, piece_attackers, path); // knight deltas
+	if (piece_attackers.size() > 0) {
+
+		if (piece_attackers.size() > 1) {
+			clearMoves({ p }); // clear all pieces moves except our piece
+
+			/*std::cout << "MULTIPLE CHECK FROM: ";
+			U->displayIntVector(piece_attackers);
+			std::cout << "\n";
+			std::cout << "PATH: ";
+			U->displayIntVector(path);*/
+
+		}
+		if (piece_attackers.size() == 1) {
+
+			/*std::cout << "SINGLE CHECK FROM: " << piece_attackers[0] << "\n";
+			std::cout << "PATH: ";
+			U->displayIntVector(path);*/
+
+			std::vector<int> p_intersection;
+
+			for (size_t i = 0; i < b_size; i++)
+			{
+				if (U->sameSide(board[i], p) && board[i] != p) {
+					Piece* ally = board[i];
+
+					temp_moves = ally->getMoves();
+					p_intersection = U->getIntersection(temp_moves, path);
+					ally->clearMoves();
+					ally->addMoves(p_intersection);
+				}
+			}
+
+		}
+
+	}
+}
+
 
 bool Board::getPiecesInReach(std::vector<Pos> deltas, Piece* p, int depth, bool colorToFind,
 	std::vector<std::pair<int, Pos >>& pieces, std::vector<int>* path) { // part of available moves (for all pieces except pawn)
@@ -457,106 +648,20 @@ bool Board::findAttackers(std::vector<Pos> deltas, int attackedPos, int depth, b
 
 }
 
-void Board::processCheck(Piece* p) {
 
+void Board::processTiedPieces(Piece* p)
+{
+	Piece** board = BoardState;
 	bool this_side = p->GetColor();
 	bool opposite_side = !this_side;
-	Piece** board = BoardState;
-	int kingFound = 0;
 	int piecePos = p->GetPos();
-	std::cout << "\nW KINGPOS " << wKing->GetPos() << "\n";
-	std::cout << "B KINGPOS " << bKing->GetPos() << "\n";
-
-	std::vector<int> piece_attackers;
-
-	std::vector<int> path;
-
-	std::vector<Pos> deltas0 = { {  1,  0 }, { -1,  0 }, {  0, 1 }, { 0, -1 } , // "queen" moves
-								 { -1, -1 }, {  1, -1 }, { -1, 1 }, { 1,  1 } };
-
-	std::vector<Pos> deltas1 = { { -2,  1 }, { 2,  1 }, { -1, 2 }, { 1,  2 },// "knight" moves
-								 { -2, -1 }, { 2, -1 }, { -1,-2 }, { 1, -2 } };
-	// casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
-
-	findAttackers(deltas0, piecePos, brd_dim, opposite_side, piece_attackers, path); // depth -1 = infinity
-
-	findAttackers(deltas1, piecePos, 1, opposite_side, piece_attackers, path);
-	/// Correcting King(or potentially other piece) moves so that it wont be able to march into check
-	std::vector<int> temp_moves = p->getMoves();
-	std::vector<int> legit_moves;
-	p->clearMoves();
-
-	std::vector<int> field_attackers;
-	std::vector<int> temp_path;
-	for (size_t i = 0; i < temp_moves.size(); i++) // adding temp move to available moves if square is not attacked
-	{
-		int curr = temp_moves[i];
-
-
-		findAttackers(deltas0, curr, brd_dim, !sideToMove, field_attackers, temp_path, p); // finding attackers of current field (ignoring our king piece)
-		findAttackers(deltas1, curr, 1, !sideToMove, field_attackers, temp_path, p);
-
-		if (field_attackers.size() == 0) {
-			legit_moves.push_back(temp_moves[i]);
-		}
-		else {
-			std::cout << "pos:" << curr << " attackers number: " << field_attackers.size() << "\n";
-			std::cout << "attackers list: ";
-			U->displayIntVector(field_attackers);
-			std::cout << "\n";
-		}
-		field_attackers.clear();
-
-	}
-	p->addMoves(legit_moves);
-	if (piece_attackers.size() > 0) {
-		// attackers own position should be included in the path
-
-		if (piece_attackers.size() > 1) {
-			clearMoves(); // clear ALL moves because if there are >1 attackers other pieces wont be able to cover
-			p->addMoves(legit_moves);; // giving our piece(king) moves back;
-
-			std::cout << "MULTIPLE CHECK FROM: ";
-			U->displayIntVector(piece_attackers);
-			std::cout << "\n";
-			std::cout << "PATH: ";
-			U->displayIntVector(path);
-
-		}
-
-
-
-		if (piece_attackers.size() == 1) {
-
-			std::cout << "SINGLE CHECK FROM: " << piece_attackers[0] << "\n";
-			std::cout << "PATH: ";
-			U->displayIntVector(path);
-
-			std::vector<int> p_intersection;
-
-			for (size_t i = 0; i < b_size; i++)
-			{
-				if (U->sameSide(board[i], p) && board[i] != p) {
-					Piece* ally = board[i];
-
-					temp_moves = ally->getMoves();
-					p_intersection = U->getIntersection(temp_moves, path);
-					ally->clearMoves();
-					ally->addMoves(p_intersection);
-				}
-			}
-
-		}
-
-	}
-
 
 	std::vector<int> ghost_attackers;
 	std::vector<int> ghost_path;
 
 	std::vector<std::pair<int, Pos> > nearby_allies;
 
-	getPiecesInReach(deltas0, p, brd_dim, this_side, nearby_allies);
+	getPiecesInReach(U->deltasFromType(2), p, brd_dim, this_side, nearby_allies);
 
 	std::vector<int> p_intersection;
 
@@ -584,66 +689,7 @@ void Board::processCheck(Piece* p) {
 	}
 }
 
-
-void Board::allPseudoLegal(Piece* p) { // part of available moves (for all pieces except pawn)
-
-	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
-	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
-	std::vector<Pos> deltas = p->getDeltas();
-	int depth = p->getDepth();
-	int currPos = p->GetPos();
-
-	Piece** board = BoardState;
-
-	//if (!israelboard) tempPieces_ = pieces_;
-	Pos coord = U->getCoordFromNumber(currPos); // from n to { x,y }
-
-	if (p->GetType() % 6 == 5) {
-		int sign = (p->GetColor()) ? -1 : 1;
-		// manually adding legal moves to pawns bc its moves cant be described with deltas
-		int numPos = currPos + (brd_dim)*sign;
-		if (U->isPosLegal(numPos) && board[numPos] == NULL) {
-			BoardState[currPos]->addMove(numPos);
-			if (board[currPos]->IsUntouched()) {
-				numPos = currPos + (2 * brd_dim * sign);
-				if (U->isPosLegal(numPos) && board[numPos] == NULL) board[currPos]->addMove(numPos);
-			}
-		}
-
-	}
-	Pos delta;
-	if (depth == -1) depth = brd_dim;
-	for (size_t i = 0; i < deltas.size(); i++)
-	{
-		delta = deltas[i];
-		coord += delta;
-
-		for (size_t currDepth = 0; currDepth < depth &&
-			coord.x >= 0 && coord.x < brd_dim &&
-			coord.y >= 0 && coord.y < brd_dim;
-			currDepth++)
-
-		{
-			int t_pos = U->getNumberFromCoord(coord); // from { x, y } to n
-			if (board[t_pos] == NULL) {
-				if (p->GetType() % 6 != 5) board[currPos]->addMove(t_pos); // if square is empty we can go there
-
-			}
-			else {
-				if (board[t_pos]->GetColor() != board[currPos]->GetColor()) {
-					p->addMove(t_pos); // if we bump into piece of opposite color this is our last square in this direction that we can go to
-				}
-
-				break;
-			}
-
-			coord += delta;
-		}
-		coord = U->getCoordFromNumber(currPos);
-	}
-
-
-}
+/////////////////////////////////////////////////////////////// check block end
 
 void Board::move(int pos1, int pos2, bool realBoard)
 {

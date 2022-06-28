@@ -35,11 +35,18 @@ public:
 
 	void nextTurn();
 	void turn();
+
 	void clearMoves();
+	void clearMoves(std::vector<Piece*> exceptions);
 	bool getPiecesInReach(std::vector<Pos> deltas, Piece* p, int depth, bool colorToFind, std::vector<std::pair<int, Pos >>& pieces, std::vector<int>* path = NULL);
 	bool findAttackers(std::vector<Pos> deltas, int attackedPos, int depth, bool colorToFind, std::vector<int>& attackers, std::vector<int>& path, Piece* ignore = NULL);
-	void allPseudoLegal(Piece* p);
+	
+	std::vector<int> safeFieldsAround(Piece* p);
+	void processTiedPieces(Piece* p);
 	void processCheck(Piece* p);
+	void allPseudoLegal(Piece* p);
+	
+	void getAllLegal(Piece* p);
 
 	//bool isOnTheSameLine()
 
@@ -71,7 +78,7 @@ private:
 	bool RMB_STATE = false;
 	//////////////
 
-	char _fen[256];
+	char _fen[256]= " ";
 
 
 

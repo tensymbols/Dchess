@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
 	const int fps = 120;
 	int msPerFrame = 1000 / fps;
 
-	Game.init("Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, 0);
+	Game.init("Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 1000, 0);
 
 	while (Game.running()) {
 		timefromstart = SDL_GetTicks();
