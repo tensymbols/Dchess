@@ -39,7 +39,8 @@ public:
 	void clearMoves();
 	void clearMoves(std::vector<Piece*> exceptions);
 	bool getPiecesInReach(std::vector<Pos> deltas, Piece* p, int depth, bool colorToFind, std::vector<std::pair<int, Pos >>& pieces, std::vector<int>* path = NULL);
-	bool findAttackers(std::vector<Pos> deltas, int attackedPos, int depth, bool colorToFind, std::vector<int>& attackers, std::vector<int>& path, Piece* ignore = NULL);
+	bool findAttackers(std::vector<Pos> deltas, int attackedPos, int depth, bool colorToFind,
+		std::vector<int>* attackers = NULL, std::vector<int>* path = NULL, Piece* ignore = NULL);
 	
 	std::vector<int> safeFieldsAround(Piece* p);
 	void processTiedPieces(Piece* p);
@@ -48,15 +49,27 @@ public:
 	
 	void getAllLegal(Piece* p);
 
+	void addCastlingMoves(Piece* p);
+	void castling(Piece* p1, Piece* p2);
+
 	//bool isOnTheSameLine()
 
 	void changeColor(SDL_Color, SDL_Color);
 private:
 	util* U;
 	int check = -1;
-	bool sideToMove = 0;// 0 - black, 1 - white
+
+
+							 
+	bool sideToMove = 0; // 0 - black, 1 - white
 	int semiClock = 0;
 	int fullClock = 0;
+
+	bool B_castle_q = true; // black castling queenside
+	bool B_castle_k = true; // black castling kingside
+	bool W_castle_q = true; // white castling queenside
+	bool W_castle_k = true; // white castling kingside
+
 	int sqr_dim = 0;
 	int brd_dim = 0;
 	int b_size = 0;
@@ -70,12 +83,14 @@ private:
 	//////////////
 
 	int prevMarked = 0;
+
 	bool legalDrawn = false;
 	bool initialized = false;
 	bool showNumbers = false;
 	bool alphaPieces = true;
 	bool LMB_STATE = false;
 	bool RMB_STATE = false;
+
 	//////////////
 
 	char _fen[256]= " ";
