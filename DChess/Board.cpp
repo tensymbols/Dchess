@@ -501,7 +501,7 @@ void Board::addCastlingMoves(Piece* p)
 		path.clear();
 		rook.clear();
 
-		getPiecesInReach({ {1,0} }, p, brd_dim / 2, side, rook);
+		getPiecesInReach({ {1,0} }, p, brd_dim / 2, side, rook, &path);
 
 		if (!rook.empty()
 			&& BoardState[rook[0].first]->GetType() == WHITE_ROOK + k
