@@ -18,7 +18,7 @@ text::text(Pos pos, SDL_Color cl, TTF_Font* font, const char* str) :
 	this->setHeight(tSurface->h);
 	SDL_FreeSurface(tSurface);
 }
-text::~text() {
+/*text::~text() {
 	delete text_;
 	delete font_;
-}
+}*/

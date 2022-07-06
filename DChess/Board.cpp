@@ -60,7 +60,7 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 
 	///////////////
 
-	TTF_Font* numberFont = TTF_OpenFont("fonts\\arial.ttf", (int)sqr_dim * 0.6);
+	numberFont = TTF_OpenFont("fonts\\arial.ttf", (int)sqr_dim * 0.6);
 	Pos shift = { (int)sqr_dim * 0.2,(int)sqr_dim * 0.2 }; // shift for text indexes
 	for (int i = 0; i < brd_dim; i++)
 	{
@@ -70,7 +70,7 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 
 			int index = U->getNumberFromCoord({ j,i });
 			squares[index].w = sqr_dim,
-				squares[index].h = sqr_dim;
+			squares[index].h = sqr_dim;
 			squares[index].x = abs.x;
 			squares[index].y = abs.y;
 
@@ -111,8 +111,10 @@ void Board::Init(char* fen)
 
 
 		if(pMenu) delete pMenu;
+		if (mateText) delete mateText;
 		delete[] BoardState;
-		holdPiece, BoardState, pMenu = NULL;
+		
+		holdPiece, BoardState, pMenu, mateText = NULL;
 
 		BoardState = (Piece**)malloc(sizeof(Piece) * b_size);
 
@@ -181,6 +183,23 @@ void Board::changeColor(SDL_Color w, SDL_Color b)
 {
 	wfield = w;
 	bfield = b;
+}
+
+
+
+bool Board::noLegalMoves()
+{
+	int cnt = 0;
+	for (size_t i = 0; i < b_size; i++)
+	{
+		if (BoardState[i] != NULL && sideToMove == BoardState[i]->getColor())
+		{
+			cnt += BoardState[i]->getMoves().size();
+
+		}
+	}
+	
+	return cnt==0;
 }
 
 
@@ -307,8 +326,9 @@ void Board::handleEvent(SDL_Event& e)
 						}
 						else
 						{
-							if (pos_ == enPassantMove.second) {
-								BoardState[pos_ + brd_dim] = NULL;
+							if (holdPiece->getType() %6 == 5 && pos_ == enPassantMove.second) {
+								int sign = (sideToMove) ? 1 : -1;
+								BoardState[pos_ + brd_dim*sign] = NULL;
 							}
 							move(holdPiece->getBrdPos(), pos_, REAL_BOARD); // move piece to specified position
 
@@ -373,7 +393,8 @@ void Board::nextTurn()
 	if (semiClock % 2 == 0) { 
 		fullClock++;
 	}
-	if (enPassantMove.first == sideToMove) {
+	std::cout << "ENPAsSANT side" << enPassantMove.first<<"\n";
+	if (enPassantMove.first == (int)sideToMove) {
 		enPassantMove.first = -1;
 		enPassantMove.second = -1; 
 	}
@@ -404,7 +425,18 @@ void Board::turn() {
 		else
 			addCastlingMoves(bKing);
 	}
-
+	if (noLegalMoves()) {
+		Pos pos = this->pos_;
+		pos += {0, this->height_ / 2 };
+		if (check == -1) {
+			mateText = new text(pos, { 153, 153, 255, 255 },numberFont, "STALEMATE, DRAW");
+		}
+		else {
+			string side = (sideToMove) ? "BLACK" : "WHITE";
+			mateText = new text(pos, { 255, 120, 120, 255 }, numberFont, "CHECKMATE "+ side + " WINS");
+		}
+	}
+	
 }
 
 void Board::allPseudoLegal(Piece* p) { // part of available moves (for all pieces except pawn)
@@ -453,7 +485,7 @@ void Board::allPseudoLegal(Piece* p) { // part of available moves (for all piece
 			int t_pos = U->getNumberFromCoord(coord); // from { x, y } to n
 			if (board[t_pos] == NULL) {
 				if (p->getType() % 6 == 5 ) {
-					if( t_pos == enPassantMove.second) board[currPos]->addMove(t_pos);
+					if( t_pos == enPassantMove.second && p->getColor() != enPassantMove.first) board[currPos]->addMove(t_pos);
 				}
 				else {
 					board[currPos]->addMove(t_pos); 
@@ -881,9 +913,13 @@ void Board::move(int pos1, int pos2, bool realBoard)
 				lastMove.first = pos1; 
 				lastMove.second = pos2;
 				
-				if (board[pos1]->getType() % 6 == 5 && (pos2 - pos1 == brd_dim * 2)) {
-					enPassantMove.first = sideToMove;
+				if (board[pos1]->getType() == 11 && (pos2 - pos1 == brd_dim * 2)) {
+					enPassantMove.first = 0;
 					enPassantMove.second = pos1 + brd_dim;
+				}
+				if (board[pos1]->getType() == 5 && (pos1 - pos2 == brd_dim * 2)) {
+					enPassantMove.first = 1;
+					enPassantMove.second = pos1 - brd_dim;
 				}
 				board[pos1]->Move(pos2);
 
@@ -986,6 +1022,7 @@ void Board::Draw() {
 	if (holdPiece != NULL)holdPiece->Draw();
 
 	if (pMenu) pMenu->Draw();
+	if (mateText) mateText->Draw();
 }
 
 void Board::drawLegal()

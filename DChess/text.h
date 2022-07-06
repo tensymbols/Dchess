@@ -7,7 +7,7 @@ class text : public gameObject {
 public:
 	text(Pos pos, SDL_Color cl, TTF_Font* font, std::string str);
 	text(Pos pos, SDL_Color cl, TTF_Font* font, const char* str);
-	~text();
+	//~text();
 private:
 	const char* text_ = NULL;
 	TTF_Font* font_ = NULL;

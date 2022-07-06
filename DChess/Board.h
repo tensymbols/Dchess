@@ -41,6 +41,7 @@ public:
 
 	void handleEvent(SDL_Event&); // handles events like mouse etc 
 
+
 	void nextTurn();
 	void turn();
 
@@ -64,6 +65,8 @@ public:
 	void endPromotion();
 
 	void changeColor(SDL_Color, SDL_Color);
+
+	bool noLegalMoves();
 private:
 	
 	int check = -1;
@@ -124,8 +127,10 @@ private:
 	vector<Piece*> pieces_;
 
 
-
+	TTF_Font* numberFont = NULL;
 	vector<text*> numberText;
+
+	text* mateText;
 
 
 	Piece** BoardState = NULL;// contains "references" to pieces, refers to NULL when cell is not occupied*/
