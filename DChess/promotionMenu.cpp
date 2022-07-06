@@ -16,7 +16,7 @@ promotionMenu::promotionMenu(Pos pos, int dim, bool color, vector<int> types, ut
 		piecesTex.push_back(texLoader::loadTexture(tempTexName.c_str(), rnd));
 		SDL_Rect r = { this->pos_.x + dim * i,this->pos_.y, dim, dim };
 		squares.push_back(r);
-		squares_cl.push_back({ 255,255,255,100 });
+		squares_cl.push_back({ 230,240,230,100 });
 	}
 
 }

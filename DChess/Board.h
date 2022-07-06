@@ -74,10 +74,15 @@ private:
 	int semiClock = 0;
 	int fullClock = 0;
 
+	pair<int, int> lastMove;
+	pair<int, int> enPassantMove = { -1,-1 };
+
+	/*
 	bool B_castle_q = true; // black castling queenside
 	bool B_castle_k = true; // black castling kingside
 	bool W_castle_q = true; // white castling queenside
 	bool W_castle_k = true; // white castling kingside
+	*/
 
 	int sqr_dim = 0;
 	int brd_dim = 0;

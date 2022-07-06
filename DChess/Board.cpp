@@ -32,6 +32,8 @@ Board::Board(const char* texfile, Pos pos_, SDL_Color wf, SDL_Color bf, int brd_
 	b_size = brd_dim * brd_dim;
 	holdPiece = NULL;
 
+
+
 	BoardState = (Piece**)malloc( sizeof( Piece) * b_size);
 
 
@@ -122,8 +124,8 @@ void Board::Init(char* fen)
 	// fen reading;
 	check = -1;
 	sideToMove = 0;
-	semiClock = 0;
-	fullClock = 0;
+	semiClock = -1;
+	fullClock = -1;
 	int pos = 0;
 	int k = 0;
 
@@ -305,6 +307,9 @@ void Board::handleEvent(SDL_Event& e)
 						}
 						else
 						{
+							if (pos_ == enPassantMove.second) {
+								BoardState[pos_ + brd_dim] = NULL;
+							}
 							move(holdPiece->getBrdPos(), pos_, REAL_BOARD); // move piece to specified position
 
 						}
@@ -312,7 +317,7 @@ void Board::handleEvent(SDL_Event& e)
 							std::cout << "SHOULD BE PROMOTED\n";
 							Pos pPos = holdPiece->getPos();
 							pPos -= {sqr_dim / 2, sqr_dim / 2};
-							pMenu = new promotionMenu(pPos , sqr_dim * 1.2, holdPiece->getColor(), promotionTypes, U, holdPiece);
+							pMenu = new promotionMenu(pPos , sqr_dim , holdPiece->getColor(), promotionTypes, U, holdPiece);
 							clearMoves();
 						}
 						else {
@@ -364,7 +369,15 @@ void Board::nextTurn()
 {
 	sideToMove = !sideToMove;
 	turn();
-	
+	semiClock++;
+	if (semiClock % 2 == 0) { 
+		fullClock++;
+	}
+	if (enPassantMove.first == sideToMove) {
+		enPassantMove.first = -1;
+		enPassantMove.second = -1; 
+	}
+	std::cout << semiClock << " " << fullClock <<" \n";
 }
 void Board::turn() {
 
@@ -439,7 +452,12 @@ void Board::allPseudoLegal(Piece* p) { // part of available moves (for all piece
 
 			int t_pos = U->getNumberFromCoord(coord); // from { x, y } to n
 			if (board[t_pos] == NULL) {
-				if (p->getType() % 6 != 5) board[currPos]->addMove(t_pos); // if square is empty we can go there
+				if (p->getType() % 6 == 5 ) {
+					if( t_pos == enPassantMove.second) board[currPos]->addMove(t_pos);
+				}
+				else {
+					board[currPos]->addMove(t_pos); 
+				} // if square is empty we can go there
 				
 			}
 			else {
@@ -860,6 +878,13 @@ void Board::move(int pos1, int pos2, bool realBoard)
 				std::cout << ("Illegal move\n");
 			}
 			else {
+				lastMove.first = pos1; 
+				lastMove.second = pos2;
+				
+				if (board[pos1]->getType() % 6 == 5 && (pos2 - pos1 == brd_dim * 2)) {
+					enPassantMove.first = sideToMove;
+					enPassantMove.second = pos1 + brd_dim;
+				}
 				board[pos1]->Move(pos2);
 
 				board[pos1]->clearMoves();

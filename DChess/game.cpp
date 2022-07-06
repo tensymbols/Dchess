@@ -23,7 +23,7 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 
 	int flags = 0;
 	int sqr_dim = 64;
-	int brd_dim = 8;
+	int brd_dim = 10;
 
 	if (fullscreen) { flags = SDL_WINDOW_FULLSCREEN; }
 	if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
@@ -45,8 +45,8 @@ void game::init(const char* title, const int xpos, const int ypos, const int wid
 		brd = new Board("textures/pieces0.png", { 128,128 }, { 129, 164, 109,255 }, { 249, 253, 235, 255 }, brd_dim, sqr_dim);
 		_interface = new gInterface({ 64,16 }, sqr_dim / 2, NULL, *brd);
 		//char fen[] = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR " }; // 8x8 standard
-		//char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
-		char fen[] = { "8/P/1/K/8/8/8/8/8/k/p " };
+		char fen[] = { "5/6/rnbqkbnr/2/pppppppp/1/5/5/5/5/5/5/5/5/1/PPPPPPPP/2/RNBQKBNR " }; // 10x10 standard
+		//char fen[] = { "8/P/1/K/8/8/8/8/8/k/p " };
 
 		brd->Init(fen);
 		isRunning = true;
