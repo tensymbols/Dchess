@@ -94,7 +94,7 @@ void Board::Init() {
 void Board::Init(char* fen)
 {
 	system("CLS");
-	//std::cout << "flushing " << std::flush;
+
 	//WHITE 0 - rook, 1 - king, 2 - queen, 3 - knight, 4 - bishop, 5 - pawn 
 	//BLACK 6 - rook, 7 - king, 8 - queen, 9 - knight, 10 - bishop, 11 - pawn 
 
@@ -104,8 +104,7 @@ void Board::Init(char* fen)
 	else {
 		for (size_t i = 0; i < pieces_.size(); i++)
 			delete pieces_[i];
-		/*for (size_t i = 0; i < tempPieces_.size(); i++)
-			delete tempPieces_[i];*/
+
 		unmarkLegal();
 		pieces_.clear();
 
@@ -156,23 +155,18 @@ void Board::Init(char* fen)
 			std::vector<Pos> deltas = U->deltasFromType(ttype);
 			int depth = U->depthFromType(ttype);
 			if (depth == -1) depth = brd_dim;
-			//	std::cout << AbsPosition.x << " " << AbsPosition.y << "\n";
+
 			BoardState[pos] = new Piece(ttype, tcolor, pos, tempTexName.c_str(),
 				absPos, sqr_dim, sqr_dim, deltas, depth);
-
 			pieces_.push_back(BoardState[pos]);
 		
-
 			if (ttype == 1) wKing = pieces_[pieces_.size() - 1];
 			else if (ttype == 7) bKing = pieces_[pieces_.size() - 1];
-
-		
 
 			pos++;
 		}
 		k++;
 	}
-
 	std::cout << "INIT\n";
 	initialized = true;
 	nextTurn();
@@ -185,8 +179,6 @@ void Board::changeColor(SDL_Color w, SDL_Color b)
 	bfield = b;
 }
 
-
-
 bool Board::noLegalMoves()
 {
 	int cnt = 0;
@@ -198,11 +190,8 @@ bool Board::noLegalMoves()
 
 		}
 	}
-	
 	return cnt==0;
 }
-
-
 
 void Board::keepInsde(Pos& pos)
 {
@@ -393,7 +382,7 @@ void Board::nextTurn()
 	if (semiClock % 2 == 0) { 
 		fullClock++;
 	}
-	std::cout << "ENPAsSANT side" << enPassantMove.first<<"\n";
+
 	if (enPassantMove.first == (int)sideToMove) {
 		enPassantMove.first = -1;
 		enPassantMove.second = -1; 
@@ -427,13 +416,13 @@ void Board::turn() {
 	}
 	if (noLegalMoves()) {
 		Pos pos = this->pos_;
-		pos += {0, this->height_ / 2 };
+		pos += {0, this->height_ };
 		if (check == -1) {
 			mateText = new text(pos, { 153, 153, 255, 255 },numberFont, "STALEMATE, DRAW");
 		}
 		else {
 			string side = (sideToMove) ? "BLACK" : "WHITE";
-			mateText = new text(pos, { 255, 120, 120, 255 }, numberFont, "CHECKMATE "+ side + " WINS");
+			mateText = new text(pos, { 255, 120, 120, 255 }, numberFont, "CHECKMATE, "+ side + " WON");
 		}
 	}
 	
@@ -529,12 +518,6 @@ bool Board::shouldBePromoted(Piece *p)
 
 void Board::getAllLegal(Piece* p) {
 
-
-	std::cout << "\nW KINGPOS " << wKing->getBrdPos() << "\n";
-	std::cout << "B KINGPOS " << bKing->getBrdPos() << "\n";
-
-
-
 	// casting "rays" in queen and knight directions combined because those are directions that pieces can check king through
 
 	/// Correcting King(or potentially other piece) moves so that it wont be able to march into check
@@ -542,12 +525,8 @@ void Board::getAllLegal(Piece* p) {
 	std::vector<int> legit_moves = safeFieldsAround(p);
 
 	p->addMoves(legit_moves);
-
-
 	processCheck(p);
-
 	processTiedPieces(p);
-
 
 }
 
@@ -666,12 +645,12 @@ std::vector<int> Board::safeFieldsAround(Piece* p)
 		if (field_attackers.size() == 0) {
 			legit_moves.push_back(temp_moves[i]);
 		}
-		else {
+		/*else {
 			std::cout << "pos:" << curr << " attackers number: " << field_attackers.size() << "\n";
 			std::cout << "attackers list: ";
 			U->displayIntVector(field_attackers);
 			std::cout << "\n";
-		}
+		}*/
 		field_attackers.clear();
 
 	}
@@ -934,7 +913,6 @@ void Board::move(int pos1, int pos2, bool realBoard)
 				board[pos1] = NULL;
 
 				check = -1;
-
 			}
 		}
 	}
@@ -1027,7 +1005,6 @@ void Board::Draw() {
 
 void Board::drawLegal()
 {
-
 	for (size_t i = 0; i < temp_moves.size(); i++)
 	{
 		int index = temp_moves[i];
@@ -1039,7 +1016,6 @@ void Board::drawLegal()
 
 	}
 	legalDrawn = true;
-
 }
 void Board::unmarkLegal() {
 
