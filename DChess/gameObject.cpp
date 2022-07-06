@@ -1,6 +1,7 @@
 #include "gameObject.h"
 #include "texmng.h"
 
+
 gameObject::gameObject(const char* texfile, Pos pos, int w, int h) : pos_(pos), width_(w), height_(h)
 {
 	if (texfile)	texture_ = texLoader::loadTexture(texfile, rnd);
@@ -61,6 +62,8 @@ void gameObject::Draw(Pos pos)
 	SDL_RenderCopy(rnd, texture_, NULL, &temp);
 }
 
+
+
 void gameObject::setPos(Pos pos)
 {
 	pos_ = pos;
@@ -80,6 +83,8 @@ int gameObject::getH() const
 
 bool gameObject::isInside(Pos coord)
 {
-	return (coord.x > pos_.x && coord.x<pos_.x + width_ &&
-		coord.y>pos_.y && coord.y < pos_.y + height_);
+	return (   coord.x > pos_.x
+			&& coord.x<pos_.x + width_ 
+			&& coord.y>pos_.y 
+			&& coord.y < pos_.y + height_);
 }

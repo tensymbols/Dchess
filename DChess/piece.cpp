@@ -1,14 +1,14 @@
 #include "piece.h"
 
 Piece::Piece(int type, bool color, int pos, const char* texname, Pos pos_) :
-	gameObject(texname, pos_), type(type), pos(pos), color(color)
+	gameObject(texname, pos_), type_(type), boardpos_(pos), color_(color)
 {
 }
 
 Piece::Piece(int type, bool color, int pos, const char* texname,
 	Pos pos_, int w, int h, std::vector<Pos> deltas, int depth) :
 	gameObject(texname, pos_, w, h),
-	type(type), pos(pos), color(color), deltas(deltas), depth(depth)
+	type_(type), boardpos_(pos), color_(color), deltas_(deltas), depth_(depth)
 {
 }
 
@@ -21,9 +21,9 @@ Piece::Piece(int type, bool color, int pos, const char* texname,
 
 void Piece::InitPiece(int type, bool color, int pos)
 {
-	this->type = type;
-	this->color = color;
-	this->pos = pos;
+	this->type_ = type;
+	this->color_ = color;
+	this->boardpos_ = pos;
 }
 
 void Piece::addMove(int pos)
@@ -44,23 +44,11 @@ bool Piece::isMoveA(int pos)
 }
 bool Piece::hasDelta(Pos delta) {
 	std::vector<Pos>::iterator it;
-	it = std::find(deltas.begin(), deltas.end(), delta);
-	return it != deltas.end();
+	it = std::find(deltas_.begin(), deltas_.end(), delta);
+	return it != deltas_.end();
 }
 
-std::vector<int> Piece::getMoves()
-{
-	return moves_;
-}
 
-std::vector<Pos> Piece::getDeltas()
-{
-	return deltas;
-}
-int Piece::getDepth()
-{
-	return depth;
-}
 
 void Piece::clearMoves() {
 	moves_.clear();
@@ -78,7 +66,8 @@ void Piece::clear()
 {
 }
 
+
 void Piece::Move(const int pos) {
-	this->pos = pos;
+	this->boardpos_ = pos;
 
 }

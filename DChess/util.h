@@ -179,7 +179,7 @@ public:
 	bool sameSide(Piece* p1, Piece* p2)
 	{
 		return p1 != NULL && p2 != NULL
-			&& p1->GetColor() == p2->GetColor();
+			&& p1->getColor() == p2->getColor();
 	}
 private:
 	Pos brd_pos_;

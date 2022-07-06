@@ -21,24 +21,27 @@ struct Pos {
 };
 
 inline Pos Pos::operator + (Pos const& obj) {
-	this->x += obj.x;
-	this->y += obj.y;
-	return *this;
+	Pos temp;
+	temp.x = this->x + obj.x;
+	temp.y = this->y + obj.y;
+	return temp;
+
 }
 inline Pos Pos::operator - (Pos const& obj) {
-	this->x -= obj.x;
-	this->y -= obj.y;
-	return *this;
+	Pos temp;
+	temp.x= this->x - obj.x;
+	temp.y= this->y - obj.y;
+	return temp;
 }
 
 inline Pos Pos::operator +=(Pos const& obj) {
-	Pos temp = *this + obj;
-	return temp;
+	*this = *this + obj;
+	return *this;
 }
 
 inline Pos Pos::operator -=(Pos const& obj) {
-	Pos temp = *this - obj;
-	return temp;
+	*this = *this - obj;
+	return *this;
 }
 
 inline Pos Pos::operator = (Pos const& obj) {

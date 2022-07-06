@@ -3,12 +3,20 @@
 #include <vector>
 #include "piece.h"
 #include "text.h"
-#include "util.h"
+#include "promotionMenu.h"
 #include <utility>   
+
+using namespace std;
+
+
+
+
+
+
 class Board : public gameObject {
 public:
 
-	using gameObject::Move;
+	util* U;
 	Board(const char*, Pos, SDL_Color wf, SDL_Color bf, int brd_dim, int sqr_dim);
 	~Board();
 	void Init(char* fen);
@@ -47,16 +55,17 @@ public:
 	void processCheck(Piece* p);
 	void allPseudoLegal(Piece* p);
 	
+	bool shouldBePromoted(Piece* p);
 	void getAllLegal(Piece* p);
 
 	void addCastlingMoves(Piece* p);
 	void castling(Piece* p1, Piece* p2);
 
-	//bool isOnTheSameLine()
+	void endPromotion();
 
 	void changeColor(SDL_Color, SDL_Color);
 private:
-	util* U;
+	
 	int check = -1;
 
 
@@ -95,7 +104,8 @@ private:
 
 	char _fen[256]= " ";
 
-
+	promotionMenu* pMenu = NULL;
+	vector<int> promotionTypes = { 0,2,3,4 };
 
 	bool* marked;
 	Piece* tempPiece = NULL;
@@ -106,13 +116,14 @@ private:
 	SDL_Color* colSquares = NULL;
 	SDL_Rect* squares = NULL;
 
-	std::vector<Piece*> pieces_;
+	vector<Piece*> pieces_;
 
 
-	std::vector<text*> numberText;
+
+	vector<text*> numberText;
+
 
 	Piece** BoardState = NULL;// contains "references" to pieces, refers to NULL when cell is not occupied*/
 
 };
-
 
